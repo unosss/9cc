@@ -20,6 +20,7 @@ struct Token {
 	Token *next;    // 次の入力トークン
 	int val;        // kindがTK_NUMの場合、その数値
 	char *str;      // トークン文字列
+	int len;	// トークンの長さ
 };
 
 // 現在着目しているトークン
@@ -34,8 +35,10 @@ void error(char *fmt, ...) {
 	fprintf(stderr, "\n");
 	exit(1);
 }
-bool consume(char op) {
-	if(token->kind != TK_RESERVED || token->str[0] != op)
+bool consume(char *op) {
+	if(token->kind != TK_RESERVED ||
+		       	strlen(op) != token->len ||
+			memcmp(token->str, op, token->len))
 		return false;
 	token = token->next;
 	return true;
@@ -60,8 +63,10 @@ void error_at(char *loc, char *fmt, ...) {
 
 // 次のトークンが期待している記号のときには、トークンを1つ読み進める。
 // それいがいのばあいにはエラーを報告する。
-void expect(char op) {
-	if (token->kind != TK_RESERVED || token->str[0] != op)
+void expect(char *op) {
+	if (token->kind != TK_RESERVED ||
+			strlen(op) != token->len ||
+			memcmp(token->str, op, token->len))
 		error("'%c'ではありません", op);
 	token = token->next;
 }
@@ -89,6 +94,20 @@ Token *new_token(TokenKind kind, Token *cur, char *str) {
 	return tok;
 }
 
+char *ADD = "+";
+char *SUB = "-";
+char *MUL = "*";
+char *DIV = "/";
+char *LB = "(";
+char *RB = ")";
+char *EQ = "==";
+char *NOT_EQ = "!=";
+char *LARGE = "<";
+char *LARGE_EQ = "<=";
+char *SMALL = ">";
+char *SMALL_EQ = ">=";
+
+
 // 入力文字列pをトークナイズしてそれを返す
 Token *tokenize(char *p) {
 	Token head;
@@ -102,14 +121,31 @@ Token *tokenize(char *p) {
 			continue;
 		}
 
-		if (*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' || *p == ')') {
+		if(*p == *EQ || *p == *NOT_EQ || *p == *LARGE_EQ || *p == *SMALL_EQ) {
 			cur = new_token(TK_RESERVED, cur, p++);
+			p++;
+			cur->len = 2;
+			continue;
+		}
+
+		if(*p == *LARGE || *p == *SMALL) {
+			cur = new_token(TK_RESERVED, cur, p++);
+			cur->len = 1;
+			continue;
+		}
+
+		if (*p == *ADD || *p == *SUB || *p == *MUL || *p == *DIV || *p == *LB || *p == *RB) {
+			cur = new_token(TK_RESERVED, cur, p++);
+			cur->len = 1;
 			continue;
 		}
 
 		if (isdigit(*p)) {
 			cur = new_token(TK_NUM, cur, p);
 			cur->val = strtol(p, &p, 10);
+			char buf[32];
+			snprintf(buf, 32, "%d", cur->val);
+			cur->len = strlen(buf);
 			continue;
 		}
 
@@ -127,6 +163,10 @@ typedef enum {
 	ND_MUL,	 // *
 	ND_DIV,	 // /
 	ND_NUM,	 // 整数
+	ND_EQ,	 // ==
+	ND_NOT_EQ,	 // !=
+	ND_LARGE,	 // <
+	ND_LARGE_EQ,	 // <= 
 } NodeKind;
 
 typedef struct Node Node;
@@ -154,21 +194,61 @@ Node *new_node_num(int val){
 	return node;
 }
 
+
+Node *equality();
+Node *relational();
+Node *add();
 Node *mul();
 Node *primary();
 Node *unary();
 
 
 Node *expr(){
+	Node *node = equality();
+	return node;
+}
+
+Node *equality(){
+	Node *node = relational();
+
+	for (;;){
+		if(consume(EQ))
+			node = new_node(ND_EQ, node, relational());
+		else if(consume(NOT_EQ))
+			node = new_node(ND_NOT_EQ, node, relational());
+		else
+			return node;
+	}
+}
+
+Node *relational(){
+	Node *node = add();
+
+	for (;;){
+		if(consume(LARGE))
+			node = new_node(ND_LARGE, node, add());
+		else if(consume(SMALL))
+			node = new_node(ND_LARGE, add(), node);
+		else if(consume(LARGE_EQ))
+			node = new_node(ND_LARGE_EQ, node, add());
+		else if(consume(SMALL_EQ))
+			node = new_node(ND_LARGE_EQ, add(), node);
+		else
+			return node;
+	}
+}
+
+Node *add(){
 	Node *node = mul();
 
 	for (;;){
-		if(consume('+'))
+		if(consume(ADD))
 			node = new_node(ND_ADD, node, mul());
-		else if(consume('-'))
+		else if(consume(SUB))
 			node = new_node(ND_SUB, node, mul());
 		else
 			return node;
+
 	}
 }
 
@@ -176,9 +256,9 @@ Node *mul(){
 	Node *node = unary();
 
 	for (;;){
-		if(consume('*'))
+		if(consume(MUL))
 			node = new_node(ND_MUL, node, unary());
-		else if(consume('/'))
+		else if(consume(DIV))
 			node = new_node(ND_DIV, node, unary());
 		else
 			return node;
@@ -187,9 +267,9 @@ Node *mul(){
 
 Node *primary(){
 	// 次のトークンが"("なら、"(" expr ")"のはず
-	if(consume('(')){
+	if(consume(LB)){
 		Node *node = expr();
-		expect(')');
+		expect(RB);
 		return node;
 	}
 
@@ -198,9 +278,9 @@ Node *primary(){
 }
 
 Node *unary() {
-	if (consume('+'))
+	if (consume(ADD))
 		return primary();
-	if (consume('-'))
+	if (consume(SUB))
 		return new_node(ND_SUB, new_node_num(0), primary());
 	return primary();
 }
@@ -230,6 +310,22 @@ void gen(Node *node){
 		printf("	cqo\n");
 		printf("	idiv rdi\n");
 		break;
+	case ND_EQ:
+		printf("	cmp rax, rdi\n");
+		printf("	sete al\n");
+		printf("	movzb rax, al\n");
+	case ND_NOT_EQ:
+		printf("        cmp rax, rdi\n");
+		printf("        setne al\n");
+		printf("        movzb rax, al\n");
+	case ND_LARGE:
+		printf("        cmp rax, rdi\n");
+		printf("        setl al\n");
+		printf("        movzb rax, al\n");
+	case ND_LARGE_EQ:
+		printf("        cmp rax, rdi\n");
+		printf("        setle al\n");
+		printf("        movzb rax, al\n");
 	}
 	printf("	push rax\n");
 }
