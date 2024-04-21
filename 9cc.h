@@ -11,20 +11,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-extern char *ADD;
-extern char *SUB;
-extern char *MUL;
-extern char *DIV;
-extern char *LB;
-extern char *RB;
-extern char *EQ;
-extern char *NOT_EQ;
-extern char *LARGE;
-extern char *LARGE_EQ;
-extern char *SMALL;
-extern char *SMALL_EQ;
-extern char *user_input;
-
 
 // 抽象構文木のノードの種類
 typedef enum {
@@ -67,6 +53,25 @@ struct Token {
         int len;        // トークンの長さ
 };
 
+extern char *ADD;
+extern char *SUB;
+extern char *MUL;
+extern char *DIV;
+extern char *LB;
+extern char *RB;
+extern char *EQ;
+extern char *NOT_EQ;
+extern char *LARGE;
+extern char *LARGE_EQ;
+extern char *SMALL;
+extern char *SMALL_EQ;
+
+
+extern char *user_input;
+
+// 現在着目しているトークン
+extern Token *token;
+
 Node *expr();
 Node *equality();
 Node *relational();
@@ -76,9 +81,6 @@ Node *primary();
 Node *unary();
 
 void gen(Node *node);
-
-// 現在着目しているトークン
-extern Token *token;
 
 bool consume(char *op);
 
