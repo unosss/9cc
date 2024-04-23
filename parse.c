@@ -85,6 +85,8 @@ Token *new_token(TokenKind kind, Token *cur, char *str) {
         return tok;
 }
 
+Node *code[100];
+
 Node *new_node(NodeKind kind, Node *lhs, Node *rhs){
         Node *node = calloc(1, sizeof(Node));
         node->kind = kind;
@@ -100,12 +102,28 @@ Node *new_node_num(int val){
         return node;
 }
 
+void program(){
+	int i = 0;
+	while (!at_eof())
+		code[i++] = stmt();
+	code[i] = NULL;
+}
 
+Node *stmt(){
+	Node *node = expr();
+	expect(";");
+	return node;
+}
 
+Node *assign(){
+	Node *node = equality();
+	if (consume("="))
+		node = new_node(ND_ASSIGN, node, assign());
+	return node;
+}
 
 Node *expr(){
-        Node *node = equality();
-        return node;
+        return assign();
 }
 
 Node *equality(){
@@ -173,6 +191,14 @@ Node *primary(){
                 return node;
         }
 
+	Token *tok = consume_ident();
+	if(tok){
+		Node *node = calloc(1, sizeof(Node));
+		node->kind = ND_LVAR;
+		node->offset = (tok->str[0] - 'a' + 1) * 8;
+		return node;
+	}
+
         // そうでなければ数値のはず
         return new_node_num(expect_number());
 }
@@ -199,14 +225,20 @@ Token *tokenize(char *p) {
                         continue;
                 }
 
-                if(*p == *EQ || *p == *NOT_EQ || *p == *LARGE_EQ || *p == *SMALL_EQ) {
+		if ('a' <= *p && *p <= 'z') {
+			cur = new_token(TK_IDENT, cur, p++);
+			cur->len = 1;
+			continue;
+		}
+
+                if (*p == *EQ || *p == *NOT_EQ || *p == *LARGE_EQ || *p == *SMALL_EQ) {
                         cur = new_token(TK_RESERVED, cur, p++);
                         p++;
                         cur->len = 2;
                         continue;
                 }
 
-                if(*p == *LARGE || *p == *SMALL) {
+                if (*p == *LARGE || *p == *SMALL) {
                         cur = new_token(TK_RESERVED, cur, p++);
                         cur->len = 1;
                         continue;
