@@ -23,9 +23,11 @@ int main(int argc, char **argv) {
 	// トークナイズしてパースする
         user_input = argv[1];
         tokenize();
-	//while(token->kind != TK_EOF){
-	//	printf("%s\n",token->str);
-	//	token = token->next;
+	//Token *check = calloc(1,sizeof(Token));
+	//check = token;
+	//while(check->kind != TK_EOF){
+	//	printf("%s\n",check->str);
+	//	check = check->next;
 	//}
         program();
 	// アセンブリの前半部分を出力

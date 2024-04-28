@@ -22,6 +22,8 @@ char *SMALL_EQ = ">=";
 char *EOS = ";";
 char *ASS = "=";
 
+LVar *locals;
+
 // エラーを報告するための関数
 // printfと同じ引数を取る
 void error(char *fmt, ...) {
@@ -45,6 +47,7 @@ Token *consume_ident() {
 	if(token->kind == TK_IDENT) {
 		tok->kind = token->kind;
  		tok->str = token->str;
+		tok->len = token->len;
 		tok->next = token->next;
 		token=token->next;
 	}
@@ -89,12 +92,29 @@ bool at_eof() {
         return token->kind == TK_EOF;
 }
 
+
 // 新しいトークンを作成してcurに繋げる
-Token *new_token(TokenKind kind, Token *cur, char *str) {
+Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
         Token *tok = calloc(1, sizeof(Token));
         tok->kind = kind;
         tok->str = str;
         cur->next = tok;
+	if (len) {
+		tok->len = len;
+	} else if (tok->kind == TK_NUM) {
+		char *endup = user_input;
+		tok->val = strtol(endup, &endup, 10);
+		len = endup - user_input;
+		tok->len = len;
+	} else if (tok->kind == TK_IDENT) {
+		char *endup = user_input;
+		while(*endup && 'a' <= endup[0] && endup[0] <= 'z') {
+			endup++;
+		}
+		len = endup - user_input;
+		tok->len = len;
+	} else tok->len = len;
+	while (len--) user_input++;
         return tok;
 }
 
@@ -116,7 +136,7 @@ Node *new_node_num(int val){
 
 void program(){
 	int i = 0;
-
+	locals = calloc(1, sizeof(LVar));
 	while (!at_eof())
 		code[i++] = stmt();
 	code[i] = NULL;
@@ -208,7 +228,19 @@ Node *primary(){
 	if(tok->kind == TK_IDENT){
 		Node *node = calloc(1, sizeof(Node));
 		node->kind = ND_LVAR;
-		node->offset = (tok->str[0] - 'a' + 1) * 8;
+
+		LVar *lvar = find_lvar(tok);
+		if (lvar) {
+			node->offset = lvar->offset;
+		} else {
+			lvar = calloc(1, sizeof(LVar));
+			lvar->next = locals;
+			lvar->name = tok->str;
+			lvar->len = tok->len;
+			lvar->offset = locals->offset + 8;
+			node->offset = lvar->offset;
+			locals = lvar;
+		}
 		return node;
 	}
 
@@ -239,54 +271,50 @@ void tokenize() {
                 }
 
 		if ('a' <= user_input[0] && user_input[0] <= 'z') {
-			cur = new_token(TK_IDENT, cur, user_input++);
-			cur->len = 1;
+			cur = new_token(TK_IDENT, cur, user_input, 0);
 			continue;
 		}
 
                 if (!memcmp(user_input,EQ,2) || !memcmp(user_input,NOT_EQ,2) || !memcmp(user_input,LARGE_EQ,2) || !memcmp(user_input,SMALL_EQ,2)) {
-                        cur = new_token(TK_RESERVED, cur, user_input++);
-                        user_input++;
-                        cur->len = 2;
+                        cur = new_token(TK_RESERVED, cur, user_input, 2);
                         continue;
                 }
 
                 if (*user_input == *LARGE || *user_input == *SMALL) {
-                        cur = new_token(TK_RESERVED, cur, user_input++);
-                        cur->len = 1;
+                        cur = new_token(TK_RESERVED, cur, user_input, 1);
                         continue;
                 }
 
 		if (*user_input == *ASS) {
-			cur = new_token(TK_RESERVED, cur, user_input++);
-			cur->len = 1;
+			cur = new_token(TK_RESERVED, cur, user_input, 1);
 			continue;
 		}
 
                 if (*user_input == *ADD || *user_input == *SUB || *user_input == *MUL || *user_input == *DIV || *user_input == *LB || *user_input == *RB) {
-                        cur = new_token(TK_RESERVED, cur, user_input++);
-                        cur->len = 1;
+                        cur = new_token(TK_RESERVED, cur, user_input, 1);
                         continue;
                 }
 
                 if (isdigit(*user_input)) {
-                        cur = new_token(TK_NUM, cur, user_input);
-                        cur->val = strtol(user_input, &user_input, 10);
-                        char buf[32];
-                        snprintf(buf, 32, "%d", cur->val);
-                        cur->len = strlen(buf);
+                        cur = new_token(TK_NUM, cur, user_input, 0);
                         continue;
                 }
 
 		if(*user_input == *EOS) {
-			cur = new_token(TK_RESERVED, cur, user_input++);
-			cur->len = 1;
+			cur = new_token(TK_RESERVED, cur, user_input, 1);
 			continue;
 		}
 
                 error("トークナイズできません");
         }
-        new_token(TK_EOF, cur, user_input);
+        new_token(TK_EOF, cur, user_input, 0);
         token = head.next;
 	return;
+}
+
+LVar *find_lvar(Token *tok) {
+	for (LVar *var = locals; var; var = var->next)
+		if (var->len == tok->len && !memcmp(tok->str, var->name, var->len))
+			return var;
+	return NULL;
 }

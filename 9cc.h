@@ -57,6 +57,18 @@ struct Token {
         int len;        // トークンの長さ
 };
 
+typedef struct LVar LVar;
+
+// ローカル変数の型
+struct LVar {
+	LVar *next; // 次の変数かNULL
+	char *name; // 変数の名前
+	int len;    // 名前の長さ
+	int offset; // RBPからのオフセット
+};
+
+extern LVar *locals;
+
 extern char *ADD;
 extern char *SUB;
 extern char *MUL;
@@ -73,6 +85,7 @@ extern char *EOS;
 extern char *ASS;
 
 extern char *user_input;
+
 
 // 現在着目しているトークン
 extern Token *token;
@@ -103,5 +116,7 @@ int expect_number();
 void tokenize();
 
 void error(char *fmt, ...);
+
+LVar *find_lvar(Token *tok);
 
 #endif
