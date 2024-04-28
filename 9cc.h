@@ -25,6 +25,7 @@ typedef enum {
         ND_LARGE_EQ,    // <=
 	ND_ASSIGN,	// =
 	ND_LVAR,	// ローカル変数
+	ND_RETURN,	// return
 } NodeKind;
 
 typedef struct Node Node;
@@ -44,6 +45,7 @@ typedef enum {
 	TK_IDENT,    // 識別子
         TK_NUM,      // 整数トークン
         TK_EOF,      // 入力の終わりを表すトークン
+	TK_RETURN,   // return
 } TokenKind;
 
 typedef struct Token Token;
@@ -86,6 +88,7 @@ extern char *ASS;
 
 extern char *user_input;
 
+extern char *user_input_orig;
 
 // 現在着目しているトークン
 extern Token *token;
@@ -118,5 +121,7 @@ void tokenize();
 void error(char *fmt, ...);
 
 LVar *find_lvar(Token *tok);
+
+int is_alnum(char c);
 
 #endif

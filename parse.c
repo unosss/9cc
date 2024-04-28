@@ -42,6 +42,12 @@ bool consume(char *op) {
         return true;
 }
 
+bool consume_tk(TokenKind tk) {
+	if(token->kind != tk) return false;
+	token = token->next;
+	return true;
+}
+
 Token *consume_ident() {
 	Token *tok = calloc(1,sizeof(Token));
 	if(token->kind == TK_IDENT) {
@@ -59,8 +65,8 @@ void error_at(char *loc, char *fmt, ...) {
         va_list ap;
         va_start(ap, fmt);
 
-        int pos = loc - user_input;
-        fprintf(stderr, "%s\n", user_input);
+        int pos = loc - user_input_orig;
+        fprintf(stderr, "%s\n", user_input_orig);
         fprintf(stderr, "%*s", pos, " "); // pos個の空白を出力
         fprintf(stderr, "^ ");
         vfprintf(stderr, fmt, ap);
@@ -114,7 +120,7 @@ Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
 		len = endup - user_input;
 		tok->len = len;
 	} else tok->len = len;
-	while (len--) user_input++;
+	user_input += tok->len;
         return tok;
 }
 
@@ -143,8 +149,18 @@ void program(){
 }
 
 Node *stmt(){
-	Node *node = expr();
-	expect(";");
+	Node *node;
+
+	if (consume_tk(TK_RETURN)) {
+		node = calloc(1,sizeof(Node));
+		node->kind = ND_RETURN;
+		node->lhs = expr();
+	} else {
+		node = expr();
+	}
+
+	if (!consume(";"))
+		error_at(token->str, "';'ではないトークンです");
 	return node;
 }
 
@@ -270,6 +286,11 @@ void tokenize() {
                         continue;
                 }
 
+		if (strlen(user_input) >= 7 && strncmp(user_input, "return", 6) == 0 && !is_alnum(user_input[6])) {
+			cur = new_token(TK_RETURN, cur, user_input, 6);
+			continue;
+		}
+
 		if ('a' <= user_input[0] && user_input[0] <= 'z') {
 			cur = new_token(TK_IDENT, cur, user_input, 0);
 			continue;
@@ -317,4 +338,8 @@ LVar *find_lvar(Token *tok) {
 		if (var->len == tok->len && !memcmp(tok->str, var->name, var->len))
 			return var;
 	return NULL;
+}
+
+int is_alnum(char c) {
+	return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || ('0' <= c && c <= '9') || (c == '_');
 }

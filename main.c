@@ -9,6 +9,8 @@
 
 char *user_input;
 
+char *user_input_orig;
+
 // 現在着目しているトークン
 Token *token;
 
@@ -21,7 +23,10 @@ int main(int argc, char **argv) {
         }
 
 	// トークナイズしてパースする
-        user_input = argv[1];
+        user_input_orig = argv[1];
+
+	user_input = user_input_orig;
+
         tokenize();
 	//Token *check = calloc(1,sizeof(Token));
 	//check = token;
