@@ -23,6 +23,10 @@ int main(int argc, char **argv) {
 	// トークナイズしてパースする
         user_input = argv[1];
         tokenize();
+	//while(token->kind != TK_EOF){
+	//	printf("%s\n",token->str);
+	//	token = token->next;
+	//}
         program();
 	// アセンブリの前半部分を出力
         printf(".intel_syntax noprefix\n");
@@ -38,7 +42,6 @@ int main(int argc, char **argv) {
 	// 先頭の式から順にコード生成
         for(int i = 0; code[i]; i++){
 		gen(code[i]);
-		
 		// 式の評価結果としてスタックに一つの値が残っている
 		// はずなので、スタックが溢れないようにポップしておく
         	printf("        pop rax\n");

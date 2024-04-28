@@ -69,7 +69,8 @@ extern char *LARGE;
 extern char *LARGE_EQ;
 extern char *SMALL;
 extern char *SMALL_EQ;
-
+extern char *EOS;
+extern char *ASS;
 
 extern char *user_input;
 
@@ -99,7 +100,7 @@ void expect(char *op);
 
 int expect_number();
 
-Token *tokenize();
+void tokenize();
 
 void error(char *fmt, ...);
 

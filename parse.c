@@ -19,6 +19,8 @@ char *LARGE = "<";
 char *LARGE_EQ = "<=";
 char *SMALL = ">";
 char *SMALL_EQ = ">=";
+char *EOS = ";";
+char *ASS = "=";
 
 // エラーを報告するための関数
 // printfと同じ引数を取る
@@ -39,7 +41,7 @@ bool consume(char *op) {
 }
 
 Token *consume_ident() {
-	Token *tok;
+	Token *tok = calloc(1,sizeof(Token));
 	if(token->kind == TK_IDENT) {
 		tok->kind = token->kind;
  		tok->str = token->str;
@@ -69,7 +71,7 @@ void expect(char *op) {
         if (token->kind != TK_RESERVED ||
                         strlen(op) != token->len ||
                         memcmp(token->str, op, token->len))
-                error("'%c'ではありません", op);
+                error("'%c'ではありません", token->str[0]);
         token = token->next;
 }
 
@@ -114,6 +116,7 @@ Node *new_node_num(int val){
 
 void program(){
 	int i = 0;
+
 	while (!at_eof())
 		code[i++] = stmt();
 	code[i] = NULL;
@@ -202,7 +205,7 @@ Node *primary(){
         }
 
 	Token *tok = consume_ident();
-	if(tok){
+	if(tok->kind == TK_IDENT){
 		Node *node = calloc(1, sizeof(Node));
 		node->kind = ND_LVAR;
 		node->offset = (tok->str[0] - 'a' + 1) * 8;
@@ -223,7 +226,7 @@ Node *unary() {
 
 
 // 入力文字列pをトークナイズしてそれを返す
-Token *tokenize() {
+void tokenize() {
         Token head;
         head.next = NULL;
         Token *cur = &head;
@@ -235,13 +238,13 @@ Token *tokenize() {
                         continue;
                 }
 
-		if ('a' <= *user_input && *user_input <= 'z') {
+		if ('a' <= user_input[0] && user_input[0] <= 'z') {
 			cur = new_token(TK_IDENT, cur, user_input++);
 			cur->len = 1;
 			continue;
 		}
 
-                if (*user_input == *EQ || *user_input == *NOT_EQ || *user_input == *LARGE_EQ || *user_input == *SMALL_EQ) {
+                if (!memcmp(user_input,EQ,2) || !memcmp(user_input,NOT_EQ,2) || !memcmp(user_input,LARGE_EQ,2) || !memcmp(user_input,SMALL_EQ,2)) {
                         cur = new_token(TK_RESERVED, cur, user_input++);
                         user_input++;
                         cur->len = 2;
@@ -253,6 +256,12 @@ Token *tokenize() {
                         cur->len = 1;
                         continue;
                 }
+
+		if (*user_input == *ASS) {
+			cur = new_token(TK_RESERVED, cur, user_input++);
+			cur->len = 1;
+			continue;
+		}
 
                 if (*user_input == *ADD || *user_input == *SUB || *user_input == *MUL || *user_input == *DIV || *user_input == *LB || *user_input == *RB) {
                         cur = new_token(TK_RESERVED, cur, user_input++);
@@ -269,9 +278,15 @@ Token *tokenize() {
                         continue;
                 }
 
+		if(*user_input == *EOS) {
+			cur = new_token(TK_RESERVED, cur, user_input++);
+			cur->len = 1;
+			continue;
+		}
+
                 error("トークナイズできません");
         }
-
         new_token(TK_EOF, cur, user_input);
-        return head.next;
+        token = head.next;
+	return;
 }
