@@ -38,6 +38,17 @@ bool consume(char *op) {
         return true;
 }
 
+Token *consume_ident() {
+	Token *tok;
+	if(token->kind == TK_IDENT) {
+		tok->kind = token->kind;
+ 		tok->str = token->str;
+		tok->next = token->next;
+		token=token->next;
+	}
+	return 	tok;
+}
+
 // エラー箇所を報告する
 void error_at(char *loc, char *fmt, ...) {
         va_list ap;
@@ -85,7 +96,6 @@ Token *new_token(TokenKind kind, Token *cur, char *str) {
         return tok;
 }
 
-Node *code[100];
 
 Node *new_node(NodeKind kind, Node *lhs, Node *rhs){
         Node *node = calloc(1, sizeof(Node));
@@ -213,46 +223,46 @@ Node *unary() {
 
 
 // 入力文字列pをトークナイズしてそれを返す
-Token *tokenize(char *p) {
+Token *tokenize() {
         Token head;
         head.next = NULL;
         Token *cur = &head;
 
-        while (*p) {
+        while (*user_input) {
 // 空白文字をスキップ
-                if (isspace(*p)) {
-                        p++;
+                if (isspace(*user_input)) {
+                        user_input++;
                         continue;
                 }
 
-		if ('a' <= *p && *p <= 'z') {
-			cur = new_token(TK_IDENT, cur, p++);
+		if ('a' <= *user_input && *user_input <= 'z') {
+			cur = new_token(TK_IDENT, cur, user_input++);
 			cur->len = 1;
 			continue;
 		}
 
-                if (*p == *EQ || *p == *NOT_EQ || *p == *LARGE_EQ || *p == *SMALL_EQ) {
-                        cur = new_token(TK_RESERVED, cur, p++);
-                        p++;
+                if (*user_input == *EQ || *user_input == *NOT_EQ || *user_input == *LARGE_EQ || *user_input == *SMALL_EQ) {
+                        cur = new_token(TK_RESERVED, cur, user_input++);
+                        user_input++;
                         cur->len = 2;
                         continue;
                 }
 
-                if (*p == *LARGE || *p == *SMALL) {
-                        cur = new_token(TK_RESERVED, cur, p++);
+                if (*user_input == *LARGE || *user_input == *SMALL) {
+                        cur = new_token(TK_RESERVED, cur, user_input++);
                         cur->len = 1;
                         continue;
                 }
 
-                if (*p == *ADD || *p == *SUB || *p == *MUL || *p == *DIV || *p == *LB || *p == *RB) {
-                        cur = new_token(TK_RESERVED, cur, p++);
+                if (*user_input == *ADD || *user_input == *SUB || *user_input == *MUL || *user_input == *DIV || *user_input == *LB || *user_input == *RB) {
+                        cur = new_token(TK_RESERVED, cur, user_input++);
                         cur->len = 1;
                         continue;
                 }
 
-                if (isdigit(*p)) {
-                        cur = new_token(TK_NUM, cur, p);
-                        cur->val = strtol(p, &p, 10);
+                if (isdigit(*user_input)) {
+                        cur = new_token(TK_NUM, cur, user_input);
+                        cur->val = strtol(user_input, &user_input, 10);
                         char buf[32];
                         snprintf(buf, 32, "%d", cur->val);
                         cur->len = strlen(buf);
@@ -262,6 +272,6 @@ Token *tokenize(char *p) {
                 error("トークナイズできません");
         }
 
-        new_token(TK_EOF, cur, p);
+        new_token(TK_EOF, cur, user_input);
         return head.next;
 }

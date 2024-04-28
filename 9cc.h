@@ -76,7 +76,7 @@ extern char *user_input;
 // 現在着目しているトークン
 extern Token *token;
 
-Node *code;
+extern Node *code[100];
 
 void program();
 Node *assign();
@@ -93,11 +93,13 @@ void gen(Node *node);
 
 bool consume(char *op);
 
+Token *consume_ident();
+
 void expect(char *op);
 
 int expect_number();
 
-Token *tokenize(char *p);
+Token *tokenize();
 
 void error(char *fmt, ...);
 
