@@ -174,6 +174,10 @@ Node *stmt(){
 		}	
 		node->kind = ND_IF;
 	} else if(consume_tk(TK_WHILE)) {
+		consume(LB);
+		node->lhs = expr();
+		consume(RB);
+		node->rhs = stmt();
 	} else if(consume_tk(TK_FOR)) {
 	} else {
 		node = expr();

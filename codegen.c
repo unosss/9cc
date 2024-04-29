@@ -60,7 +60,16 @@ void gen(Node *node){
 		printf(".Lend%d:\n", id);
 		id++;
 		return;
-
+	case ND_WHILE:
+		printf(".Lbegin%d:\n", id);
+		gen(node->lhs);
+		printf("	pop rax\n");
+		printf("	cmp rax, 0\n");
+		printf("	je .Lend%d\n", id);
+		gen(node->rhs);
+		printf("	jmp .Lbegin%d\n", id);
+		printf(".Lend%d:\n", id);
+		id++;
 	}
 
         gen(node->lhs);
