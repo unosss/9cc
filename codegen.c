@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+int id = 0;
+
 void gen_lval(Node *node){
 	if(node->kind != ND_LVAR)
 		error("");
@@ -41,6 +43,24 @@ void gen(Node *node){
 		printf("	pop rbp\n");
 		printf("	ret\n");
 		return;
+	case ND_IF:
+		gen(node->lhs);
+		printf("	pop rax\n");
+		printf("	cmp rax, 0\n");
+		if (node->m1ex) {
+			printf("	je .Lelse%d\n", id);
+			gen(node->rhs);
+			printf("        jmp .Lend%d\n", id);
+			printf(".Lelse%d:\n", id);
+			gen(node->m1hs);
+		} else {
+			printf("	je .Lend%d\n", id);
+			gen(node->rhs);
+		}
+		printf(".Lend%d:\n", id);
+		id++;
+		return;
+
 	}
 
         gen(node->lhs);

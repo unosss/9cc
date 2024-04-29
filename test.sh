@@ -19,4 +19,5 @@ assert() {
 assert 0 "a=5-5;"
 assert 3 "foo=2*7-9-2;"
 assert 4 "return 1+3;"
+assert 1 "a=7-2*3; if(a) return 1; else return 0;"
 echo "ok"

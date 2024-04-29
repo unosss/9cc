@@ -26,6 +26,9 @@ typedef enum {
 	ND_ASSIGN,	// =
 	ND_LVAR,	// ローカル変数
 	ND_RETURN,	// return
+	ND_IF,		// if
+	ND_WHILE,	// while
+	ND_FOR,		// for
 } NodeKind;
 
 typedef struct Node Node;
@@ -34,9 +37,13 @@ typedef struct Node Node;
 struct Node {
         NodeKind kind;  // ノードの型
         Node *lhs;      // 左辺
+	Node *m1hs;	// 中間ノード１
+	Node *m2hs;	// 中間ノード２
         Node *rhs;      // 右辺
         int val;        // kindがND_NUMの場合のみ使う
 	int offset;	// kindがND_LVARの場合のみ使う
+	bool m1ex;	// 中間ノード１が使われたかどうか
+	bool m2ex;	// 中間ノード２が使われたかどうか
 };
 
 // トークンの種類
@@ -46,6 +53,10 @@ typedef enum {
         TK_NUM,      // 整数トークン
         TK_EOF,      // 入力の終わりを表すトークン
 	TK_RETURN,   // return
+	TK_IF,	     // if
+	TK_WHILE,    // while
+	TK_FOR,	     // for
+	TK_ELSE,     // else
 } TokenKind;
 
 typedef struct Token Token;
@@ -90,6 +101,8 @@ extern char *user_input;
 
 extern char *user_input_orig;
 
+extern int id;
+
 // 現在着目しているトークン
 extern Token *token;
 
@@ -123,5 +136,7 @@ void error(char *fmt, ...);
 LVar *find_lvar(Token *tok);
 
 int is_alnum(char c);
+
+void init_node(Node **node);
 
 #endif

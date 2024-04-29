@@ -127,6 +127,7 @@ Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
 
 Node *new_node(NodeKind kind, Node *lhs, Node *rhs){
         Node *node = calloc(1, sizeof(Node));
+	init_node(&node);
         node->kind = kind;
         node->lhs = lhs;
         node->rhs = rhs;
@@ -135,6 +136,7 @@ Node *new_node(NodeKind kind, Node *lhs, Node *rhs){
 
 Node *new_node_num(int val){
         Node *node = calloc(1, sizeof(Node));
+	init_node(&node);
         node->kind = ND_NUM;
         node->val = val;
         return node;
@@ -148,24 +150,44 @@ void program(){
 	code[i] = NULL;
 }
 
-Node *stmt(){
-	Node *node;
+void init_node(Node **node){
+	(*node)->m1ex = false;
+	(*node)->m2ex = false;
+}
 
+Node *stmt(){
+	Node *node = calloc(1,sizeof(Node));
+	init_node(&node);
 	if (consume_tk(TK_RETURN)) {
-		node = calloc(1,sizeof(Node));
 		node->kind = ND_RETURN;
 		node->lhs = expr();
+		if (!consume(";"))
+			error_at(token->str, "';'ではないトークンです");
+	} else if (consume_tk(TK_IF)) {
+		consume(LB);
+		node->lhs = expr();
+		consume(RB);
+		node->rhs = stmt();
+		if (consume_tk(TK_ELSE)) {
+			node->m1hs = stmt();
+			node->m1ex = true;
+		}	
+		node->kind = ND_IF;
+	} else if(consume_tk(TK_WHILE)) {
+	} else if(consume_tk(TK_FOR)) {
 	} else {
 		node = expr();
+		if (!consume(";"))
+			error_at(token->str, "';'ではないトークンです");
 	}
 
-	if (!consume(";"))
-		error_at(token->str, "';'ではないトークンです");
 	return node;
 }
 
 Node *assign(){
-	Node *node = equality();
+	Node *node = calloc(1,sizeof(Node));
+	init_node(&node);
+        node = equality();
 	if (consume("="))
 		node = new_node(ND_ASSIGN, node, assign());
 	return node;
@@ -176,7 +198,9 @@ Node *expr(){
 }
 
 Node *equality(){
-        Node *node = relational();
+        Node *node = calloc(1,sizeof(Node));
+	init_node(&node);
+        node = relational();
 
         for (;;){
                 if(consume(EQ))
@@ -189,7 +213,9 @@ Node *equality(){
 }
 
 Node *relational(){
-        Node *node = add();
+        Node *node = calloc(1,sizeof(Node));
+	init_node(&node);
+	node = add();
 
         for (;;){
                 if(consume(LARGE))
@@ -206,8 +232,9 @@ Node *relational(){
 }
 
 Node *add(){
-        Node *node = mul();
-
+        Node *node = calloc(1,sizeof(Node));
+	init_node(&node);
+	node = mul();
         for (;;){
                 if(consume(ADD))
                         node = new_node(ND_ADD, node, mul());
@@ -220,8 +247,9 @@ Node *add(){
 }
 
 Node *mul(){
-        Node *node = unary();
-
+        Node *node = calloc(1,sizeof(Node));
+	init_node(&node);
+	node = unary();
         for (;;){
                 if(consume(MUL))
                         node = new_node(ND_MUL, node, unary());
@@ -235,7 +263,9 @@ Node *mul(){
 Node *primary(){
         // 次のトークンが"("なら、"(" expr ")"のはず
         if(consume(LB)){
-                Node *node = expr();
+                Node *node = calloc(1,sizeof(Node));
+		init_node(&node);
+		node = expr();
                 expect(RB);
                 return node;
         }
@@ -243,6 +273,7 @@ Node *primary(){
 	Token *tok = consume_ident();
 	if(tok->kind == TK_IDENT){
 		Node *node = calloc(1, sizeof(Node));
+		init_node(&node);
 		node->kind = ND_LVAR;
 
 		LVar *lvar = find_lvar(tok);
@@ -288,6 +319,26 @@ void tokenize() {
 
 		if (strlen(user_input) >= 7 && strncmp(user_input, "return", 6) == 0 && !is_alnum(user_input[6])) {
 			cur = new_token(TK_RETURN, cur, user_input, 6);
+			continue;
+		}
+
+		if (strlen(user_input) >= 3 && strncmp(user_input, "if", 2) == 0 && !is_alnum(user_input[2])) {
+			cur = new_token(TK_IF, cur, user_input, 2);
+			continue;
+		}
+
+		if (strlen(user_input) >= 5 && strncmp(user_input, "else", 4) == 0 && !is_alnum(user_input[4])) {
+			cur = new_token(TK_ELSE, cur, user_input, 4);
+			continue;
+		}
+
+		if (strlen(user_input) >= 6 && strncmp(user_input, "while", 5) == 0 && !is_alnum(user_input[5])) {
+			cur = new_token(TK_WHILE, cur, user_input, 5);
+			continue;
+		}
+
+		if (strlen(user_input) >= 4 && strncmp(user_input, "for", 3) == 0 && !is_alnum(user_input[3])) {
+			cur = new_token(TK_FOR, cur, user_input, 3);
 			continue;
 		}
 
