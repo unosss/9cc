@@ -88,6 +88,14 @@ void gen(Node *node){
 		printf(".Lend%d:\n", id);
 		id++;
 		return;
+	case ND_BLOCK:
+		size_t done_cnt = 0;
+		while (done_cnt < node->v->used) {
+			gen(node->v->array[done_cnt]);
+			done_cnt++;
+			printf("	pop rax\n");
+		}
+		return;
 	}
 
         gen(node->lhs);

@@ -12,6 +12,20 @@
 #include <string.h>
 
 
+typedef struct Node Node;
+
+typedef struct {
+	Node **array;
+	size_t used;
+	size_t size;
+} Vector;
+
+void init_vector(Vector *v, size_t initialSize);
+
+void insert_vector(Vector *v, Node *node);
+
+Node *at_vector(Vector *v, size_t index);
+
 // 抽象構文木のノードの種類
 typedef enum {
         ND_ADD,		// +
@@ -29,9 +43,9 @@ typedef enum {
 	ND_IF,		// if
 	ND_WHILE,	// while
 	ND_FOR,		// for
+	ND_BLOCK,	// block
 } NodeKind;
 
-typedef struct Node Node;
 
 // 抽象構文木のノードの型
 struct Node {
@@ -46,6 +60,7 @@ struct Node {
 	bool m2ex;	// 中間ノード２が使われたかどうか
 	bool lex;	// 左辺が使われたかどうか
 	bool rex;	// 右辺が使われたかどうか
+	Vector *v;	// block
 };
 
 // トークンの種類
@@ -82,6 +97,7 @@ struct LVar {
 	int offset; // RBPからのオフセット
 };
 
+
 extern LVar *locals;
 
 extern char *ADD;
@@ -90,6 +106,8 @@ extern char *MUL;
 extern char *DIV;
 extern char *LB;
 extern char *RB;
+extern char *LMB;
+extern char *RMB;
 extern char *EQ;
 extern char *NOT_EQ;
 extern char *LARGE;

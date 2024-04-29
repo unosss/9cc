@@ -13,6 +13,8 @@ char *MUL = "*";
 char *DIV = "/";
 char *LB = "(";
 char *RB = ")";
+char *LMB = "{";
+char *RMB = "}";
 char *EQ = "==";
 char *NOT_EQ = "!=";
 char *LARGE = "<";
@@ -159,6 +161,29 @@ void init_node(Node **node){
 	(*node)->rex = false;
 }
 
+void init_vector(Vector *v, size_t initialSize) {
+	v->array = (Node **)malloc(initialSize * sizeof(Node));
+	v->used = 0;
+	v->size = initialSize;
+}
+
+void insert_vector(Vector *v, Node *node) {
+	if (v->used == v->size) {
+		v->size *= 2;
+		v->array = (Node **)realloc(v->array, v->size * sizeof(Node));
+	}
+	v->array[v->used++] = node;
+}
+
+Node *at_vector(Vector *v, size_t index) {
+	if (index < v->used) {
+		return v->array[index];
+	} else {
+		printf("Index out of bounds\n");
+		exit(1);
+	}
+}
+
 Node *stmt(){
 	Node *node = calloc(1,sizeof(Node));
 	init_node(&node);
@@ -169,6 +194,7 @@ Node *stmt(){
 		if (!consume(";"))
 			error_at(token->str, "';'ではないトークンです");
 	} else if (consume_tk(TK_IF)) {
+		node->kind = ND_IF;
 		consume(LB);
 		node->lhs = expr();
 		node->lex = true;
@@ -179,8 +205,8 @@ Node *stmt(){
 			node->m1hs = stmt();
 			node->m1ex = true;
 		}	
-		node->kind = ND_IF;
 	} else if(consume_tk(TK_WHILE)) {
+		node->kind = ND_WHILE;
 		consume(LB);
 		node->lhs = expr();
 		node->lex = true;
@@ -188,6 +214,7 @@ Node *stmt(){
 		node->rhs = stmt();
 		node->rex = true;
 	} else if(consume_tk(TK_FOR)) {
+		node->kind = ND_FOR;
 		consume(LB);
 		if(!consume(";")){
 			node->lhs = expr();
@@ -210,6 +237,16 @@ Node *stmt(){
 		node->rhs = stmt();
 		node->rex = true;
 
+	} else if (consume(LMB)) {
+		node->kind = ND_BLOCK;
+		node->v = calloc(1,sizeof(Vector));
+		init_vector(node->v, 10);
+		while(!consume(RMB)){
+			Node *buf = calloc(1,sizeof(Node));
+			init_node(&buf);
+			buf = stmt();
+			insert_vector(node->v, buf);
+		}
 	} else {
 		node = expr();
 		if (!consume(";"))
@@ -397,7 +434,7 @@ void tokenize() {
 			continue;
 		}
 
-                if (*user_input == *ADD || *user_input == *SUB || *user_input == *MUL || *user_input == *DIV || *user_input == *LB || *user_input == *RB) {
+                if (*user_input == *ADD || *user_input == *SUB || *user_input == *MUL || *user_input == *DIV || *user_input == *LB || *user_input == *RB || *user_input == *LMB || *user_input == *RMB) {
                         cur = new_token(TK_RESERVED, cur, user_input, 1);
                         continue;
                 }
