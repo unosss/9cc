@@ -44,6 +44,8 @@ struct Node {
 	int offset;	// kindがND_LVARの場合のみ使う
 	bool m1ex;	// 中間ノード１が使われたかどうか
 	bool m2ex;	// 中間ノード２が使われたかどうか
+	bool lex;	// 左辺が使われたかどうか
+	bool rex;	// 右辺が使われたかどうか
 };
 
 // トークンの種類

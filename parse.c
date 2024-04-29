@@ -131,6 +131,8 @@ Node *new_node(NodeKind kind, Node *lhs, Node *rhs){
         node->kind = kind;
         node->lhs = lhs;
         node->rhs = rhs;
+	node->lex = true;
+	node->rex = true;
         return node;
 }
 
@@ -153,6 +155,8 @@ void program(){
 void init_node(Node **node){
 	(*node)->m1ex = false;
 	(*node)->m2ex = false;
+	(*node)->lex = false;
+	(*node)->rex = false;
 }
 
 Node *stmt(){
@@ -161,13 +165,16 @@ Node *stmt(){
 	if (consume_tk(TK_RETURN)) {
 		node->kind = ND_RETURN;
 		node->lhs = expr();
+		node->lex = true;
 		if (!consume(";"))
 			error_at(token->str, "';'ではないトークンです");
 	} else if (consume_tk(TK_IF)) {
 		consume(LB);
 		node->lhs = expr();
+		node->lex = true;
 		consume(RB);
 		node->rhs = stmt();
+		node->rex = true;
 		if (consume_tk(TK_ELSE)) {
 			node->m1hs = stmt();
 			node->m1ex = true;
@@ -176,9 +183,33 @@ Node *stmt(){
 	} else if(consume_tk(TK_WHILE)) {
 		consume(LB);
 		node->lhs = expr();
+		node->lex = true;
 		consume(RB);
 		node->rhs = stmt();
+		node->rex = true;
 	} else if(consume_tk(TK_FOR)) {
+		consume(LB);
+		if(!consume(";")){
+			node->lhs = expr();
+			node->lex = true;
+			if(!consume(";"))
+				error_at(token->str, "';'ではないトークンです");
+		}
+		if(!consume(";")){
+			node->m1hs = expr();
+			node->m1ex = true;
+			if(!consume(";"))
+				error_at(token->str, "';'ではないトークンです");
+		}
+		if(!consume(RB)){
+			node->m2hs = expr();
+			node->m2ex = true;
+			if(!consume(RB))
+				error_at(token->str, "';'ではないトークンです");
+		}
+		node->rhs = stmt();
+		node->rex = true;
+
 	} else {
 		node = expr();
 		if (!consume(";"))
