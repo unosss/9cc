@@ -151,12 +151,14 @@ Node *new_node_num(int val){
 
 void function(){
 	int index = 0;
-	while(!at_eof) {
+	while(!at_eof()) {
+		func_name[index] = calloc(1,sizeof(char));
 		strncpy(func_name[index], token->str, token->len);
 		token = token->next;
 		if(!consume(LB))
 			error_at(token->str, "'('ではないトークンです");
 		locals = calloc(1, sizeof(LVar));
+		vec[index] = calloc(1,sizeof(Vector));
 		init_vector(vec[index],6);
 		while(!consume(RB)){
 			Node *buf = calloc(1,sizeof(Node));
@@ -378,11 +380,10 @@ Node *primary(){
 			node->kind = ND_FUNC;
 			node->str = calloc(1,sizeof(char));
 			strncpy(node->str, tok->str, tok->len);
-			if (token->kind == TK_NUM) {
-				for (;;) {
-					insert_vector(node->v, new_node_num(expect_number()));
-					if(!consume(COM))break;
-				}
+			for (;;) {
+				Node *buf = primary();
+				insert_vector(node->v, buf);
+				if(!consume(COM))break;
 			}
 			if (!consume(RB)){
 				error_at(token->str, "')'ではないトークンです");

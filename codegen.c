@@ -38,7 +38,7 @@ void gen(Node *node){
 		return;
 	case ND_RETURN:
 		gen(node->lhs);
-		printf("	pop rax\n");
+		printf("        pop rax\n");
 		printf("	mov rsp, rbp\n");
 		printf("	pop rbp\n");
 		printf("	ret\n");
@@ -101,6 +101,7 @@ void gen(Node *node){
 			printf("	mov %s, rax\n", reg[i]);
 		}
 		printf("	call %s\n", node->str);
+		printf("	push rax\n");
 		return;
 	}
 
@@ -128,18 +129,22 @@ void gen(Node *node){
                 printf("        cmp rax, rdi\n");
                 printf("        sete al\n");
                 printf("        movzb rax, al\n");
+		break;
         case ND_NOT_EQ:
                 printf("        cmp rax, rdi\n");
                 printf("        setne al\n");
                 printf("        movzb rax, al\n");
+		break;
         case ND_LARGE:
                 printf("        cmp rax, rdi\n");
                 printf("        setl al\n");
                 printf("        movzb rax, al\n");
+		break;
         case ND_LARGE_EQ:
                 printf("        cmp rax, rdi\n");
                 printf("        setle al\n");
                 printf("        movzb rax, al\n");
+		break;
         }
         printf("        push rax\n");
 }

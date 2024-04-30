@@ -41,9 +41,12 @@ int main(int argc, char **argv) {
         function();
 	// アセンブリの前半部分を出力
         printf(".intel_syntax noprefix\n");
-        printf(".globl main\n");
-        printf("main:\n");
-
+        printf(".globl");
+	for(int i = 0; func_name[i]; i++){
+		if(i)printf(",");
+		printf(" %s", func_name[i]);
+	}
+	printf("\n");
         for(int i = 0; func_name[i]; i++){
 		printf("%s:\n", func_name[i]);
 		// プロローグ
@@ -60,13 +63,8 @@ int main(int argc, char **argv) {
 			gen(code[i][j]);
 			// 式の評価結果としてスタックに一つの値が残っている
 			// はずなので、スタックが溢れないようにポップしておく
-        		printf("        pop rax\n");
-		}
-		// エピローグ
-		// 最後の式の結果がRAXに残っているのでそれが返り値になる
-		printf("        mov rsp, rbp\n");
-		printf("        pop rbp\n");
-		printf("        ret\n");
+        		if(code[i][j]->kind != ND_RETURN)printf("        pop rax\n");
+        	}
 	}
-        return 0;
+	return 0;
 }
