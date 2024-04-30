@@ -149,12 +149,35 @@ Node *new_node_num(int val){
         return node;
 }
 
-void program(){
+void function(){
+	int index = 0;
+	while(!at_eof) {
+		strncpy(func_name[index], token->str, token->len);
+		token = token->next;
+		if(!consume(LB))
+			error_at(token->str, "'('ではないトークンです");
+		locals = calloc(1, sizeof(LVar));
+		init_vector(vec[index],6);
+		while(!consume(RB)){
+			Node *buf = calloc(1,sizeof(Node));
+			buf = primary();
+			insert_vector(vec[index],buf);
+			if(consume(RB))break;
+			consume(COM);
+		}
+		if(!consume(LMB))
+			error_at(token->str, "'{'ではないトークンです");
+		program(index++);
+		free(locals);
+	}
+	func_name[index] = NULL;
+}
+
+void program(int index){
 	int i = 0;
-	locals = calloc(1, sizeof(LVar));
-	while (!at_eof())
-		code[i++] = stmt();
-	code[i] = NULL;
+	while (!consume(RMB))
+		code[index][i++] = stmt();
+	code[index][i] = NULL;
 }
 
 void init_node(Node **node){
@@ -360,10 +383,6 @@ Node *primary(){
 					insert_vector(node->v, new_node_num(expect_number()));
 					if(!consume(COM))break;
 				}
-			} else if (token->kind == TK_IDENT) {
-				for (;;) {
-				}
-
 			}
 			if (!consume(RB)){
 				error_at(token->str, "')'ではないトークンです");

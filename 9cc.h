@@ -44,7 +44,7 @@ typedef enum {
 	ND_WHILE,	// while
 	ND_FOR,		// for
 	ND_BLOCK,	// block
-	ND_FUNC,	// 関数
+	ND_FUNC,	// 関数の呼び出し
 } NodeKind;
 
 
@@ -128,10 +128,15 @@ extern int id;
 // 現在着目しているトークン
 extern Token *token;
 
-extern Node *code[100];
+extern Node *code[10][100];
 
 extern char *reg[6];
 
+extern char *func_name[10];
+
+extern Vector *vec[10];
+
+void function();
 void program();
 Node *assign();
 Node *stmt();
@@ -144,6 +149,8 @@ Node *primary();
 Node *unary();
 
 void gen(Node *node);
+
+void gen_lval(Node *node);
 
 bool consume(char *op);
 
