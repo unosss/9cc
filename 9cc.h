@@ -44,6 +44,7 @@ typedef enum {
 	ND_WHILE,	// while
 	ND_FOR,		// for
 	ND_BLOCK,	// block
+	ND_FUNC,	// 関数
 } NodeKind;
 
 
@@ -61,6 +62,7 @@ struct Node {
 	bool lex;	// 左辺が使われたかどうか
 	bool rex;	// 右辺が使われたかどうか
 	Vector *v;	// block
+	char *str;	// 関数名 
 };
 
 // トークンの種類
@@ -127,6 +129,8 @@ extern int id;
 extern Token *token;
 
 extern Node *code[100];
+
+extern char *reg[6];
 
 void program();
 Node *assign();

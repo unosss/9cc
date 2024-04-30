@@ -23,6 +23,9 @@ char *SMALL = ">";
 char *SMALL_EQ = ">=";
 char *EOS = ";";
 char *ASS = "=";
+char *COM = ",";
+
+char *reg[6] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 
 LVar *locals;
 
@@ -346,19 +349,40 @@ Node *primary(){
 	if(tok->kind == TK_IDENT){
 		Node *node = calloc(1, sizeof(Node));
 		init_node(&node);
-		node->kind = ND_LVAR;
+		if (consume(LB)){
+			node->v = calloc(1,sizeof(Vector));
+			init_vector(node->v, 6);
+			node->kind = ND_FUNC;
+			node->str = calloc(1,sizeof(char));
+			strncpy(node->str, tok->str, tok->len);
+			if (token->kind == TK_NUM) {
+				for (;;) {
+					insert_vector(node->v, new_node_num(expect_number()));
+					if(!consume(COM))break;
+				}
+			} else if (token->kind == TK_IDENT) {
+				for (;;) {
+				}
 
-		LVar *lvar = find_lvar(tok);
-		if (lvar) {
-			node->offset = lvar->offset;
+			}
+			if (!consume(RB)){
+				error_at(token->str, "')'ではないトークンです");
+			}
 		} else {
-			lvar = calloc(1, sizeof(LVar));
-			lvar->next = locals;
-			lvar->name = tok->str;
-			lvar->len = tok->len;
-			lvar->offset = locals->offset + 8;
-			node->offset = lvar->offset;
-			locals = lvar;
+			node->kind = ND_LVAR;
+
+			LVar *lvar = find_lvar(tok);
+			if (lvar) {
+				node->offset = lvar->offset;
+			} else {
+				lvar = calloc(1, sizeof(LVar));
+				lvar->next = locals;
+				lvar->name = tok->str;
+				lvar->len = tok->len;
+				lvar->offset = locals->offset + 8;
+				node->offset = lvar->offset;
+				locals = lvar;
+			}
 		}
 		return node;
 	}
@@ -434,7 +458,8 @@ void tokenize() {
 			continue;
 		}
 
-                if (*user_input == *ADD || *user_input == *SUB || *user_input == *MUL || *user_input == *DIV || *user_input == *LB || *user_input == *RB || *user_input == *LMB || *user_input == *RMB) {
+                if (*user_input == *ADD || *user_input == *SUB || *user_input == *MUL || *user_input == *DIV
+			       	|| *user_input == *LB || *user_input == *RB || *user_input == *LMB || *user_input == *RMB || *user_input == *COM) {
                         cur = new_token(TK_RESERVED, cur, user_input, 1);
                         continue;
                 }

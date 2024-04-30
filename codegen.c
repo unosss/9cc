@@ -89,12 +89,18 @@ void gen(Node *node){
 		id++;
 		return;
 	case ND_BLOCK:
-		size_t done_cnt = 0;
-		while (done_cnt < node->v->used) {
-			gen(node->v->array[done_cnt]);
-			done_cnt++;
+		for (int i = 0; i < node->v->used; i++) {
+			gen(at_vector(node->v, i));
 			printf("	pop rax\n");
 		}
+		return;
+	case ND_FUNC:
+		for (int i = 0; i < node->v->used; i++) {
+			gen(at_vector(node->v, i));
+			printf("	pop rax\n");
+			printf("	mov %s, rax\n", reg[i]);
+		}
+		printf("	call %s\n", node->str);
 		return;
 	}
 
