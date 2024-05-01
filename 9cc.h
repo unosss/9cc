@@ -11,6 +11,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+typedef struct Type Type;
+
+struct Type {
+	enum { INT, PTR } ty;
+	struct Type *ptr_to;
+};
 
 typedef struct Node Node;
 
@@ -65,7 +71,8 @@ struct Node {
 	bool lex;	// 左辺が使われたかどうか
 	bool rex;	// 右辺が使われたかどうか
 	Vector *v;	// block
-	char *str;	// 関数名 
+	char *str;	// 関数名
+	Type type;	// type 
 };
 
 // トークンの種類
@@ -124,7 +131,6 @@ extern char *EOS;
 extern char *ASS;
 extern char *ADDR;
 extern char *DEREF;
-extern char *INT;
 
 extern char *user_input;
 

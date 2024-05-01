@@ -26,11 +26,11 @@ char *ASS = "=";
 char *COM = ",";
 char *DEREF = "*";
 char *ADDR = "&";
-char *INT = "int";
 
 char *reg[6] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 
 LVar *locals;
+
 
 // エラーを報告するための関数
 // printfと同じ引数を取る
@@ -165,19 +165,8 @@ void function(){
 		vec[index] = calloc(1,sizeof(Vector));
 		init_vector(vec[index],6);
 		while(!consume(RB)){
-			consume_tk(TK_INT);
 			Node *buf = calloc(1,sizeof(Node));
-			buf->kind = ND_INT;
-                	Token *tok = consume_ident();
-                	if(tok->kind != TK_IDENT)
-                        	error("'int'の後に変数がありません");
-                	LVar *lvar = calloc(1, sizeof(LVar));
-                	lvar->next = locals;
-                	lvar->name = tok->str;
-                	lvar->len = tok->len;
-                	lvar->offset = locals->offset + 8;
-                	buf->offset = lvar->offset;
-                	locals = lvar;
+			buf = expr();
 			insert_vector(vec[index],buf);
 			if(consume(RB))break;
 			consume(COM);
@@ -290,20 +279,6 @@ Node *stmt(){
 			buf = stmt();
 			insert_vector(node->v, buf);
 		}
-	} else if (consume_tk(TK_INT)) {
-		node->kind = ND_INT;
-		Token *tok = consume_ident();
-		if(tok->kind != TK_IDENT)
-			error_at(tok->str, "'int'の後に変数がありません");
-                LVar *lvar = calloc(1, sizeof(LVar));
-                lvar->next = locals;
-                lvar->name = tok->str;
-                lvar->len = tok->len;
-                lvar->offset = locals->offset + 8;
-                node->offset = lvar->offset;
-                locals = lvar;
-		if (!consume(";"))
-                        error_at(token->str, "';'ではないトークンです");
 	} else {
 		node = expr();
 		if (!consume(";"))
@@ -323,7 +298,20 @@ Node *assign(){
 }
 
 Node *expr(){
-        return assign();
+	if(consume_tk(TK_INT)){
+		consume_tk(TK_INT);
+                Node *node = calloc(1,sizeof(Node));
+		node->kind = ND_INT;
+                Token *tok = consume_ident();
+                LVar *lvar = calloc(1, sizeof(LVar));
+                lvar->next = locals;
+                lvar->name = tok->str;
+                lvar->len = tok->len;
+                lvar->offset = locals->offset + 8;
+                node->offset = lvar->offset;
+                locals = lvar;
+		return node;
+	} else	return assign();
 }
 
 Node *equality(){
