@@ -24,6 +24,8 @@ char *SMALL_EQ = ">=";
 char *EOS = ";";
 char *ASS = "=";
 char *COM = ",";
+char *DEREF = "*";
+char *ADDR = "&";
 
 char *reg[6] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 
@@ -416,6 +418,10 @@ Node *unary() {
                 return primary();
         if (consume(SUB))
                 return new_node(ND_SUB, new_node_num(0), primary());
+	if (consume(DEREF))
+		return new_node(ND_DEREF, unary(), new_node_num(0));
+	if (consume(ADDR))
+		return new_node(ND_ADDR, unary(), new_node_num(0));
         return primary();
 }
 
@@ -479,7 +485,8 @@ void tokenize() {
 		}
 
                 if (*user_input == *ADD || *user_input == *SUB || *user_input == *MUL || *user_input == *DIV
-			       	|| *user_input == *LB || *user_input == *RB || *user_input == *LMB || *user_input == *RMB || *user_input == *COM) {
+			       	|| *user_input == *LB || *user_input == *RB || *user_input == *LMB || *user_input == *RMB 
+				|| *user_input == *COM || *user_input == *ADDR || *user_input == *DEREF) {
                         cur = new_token(TK_RESERVED, cur, user_input, 1);
                         continue;
                 }

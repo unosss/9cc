@@ -45,6 +45,8 @@ typedef enum {
 	ND_FOR,		// for
 	ND_BLOCK,	// block
 	ND_FUNC,	// 関数の呼び出し
+	ND_DEREF,	// ポインタ
+	ND_ADDR,	// 参照
 } NodeKind;
 
 
@@ -118,6 +120,8 @@ extern char *SMALL;
 extern char *SMALL_EQ;
 extern char *EOS;
 extern char *ASS;
+extern char *ADDR;
+extern char *DEREF;
 
 extern char *user_input;
 

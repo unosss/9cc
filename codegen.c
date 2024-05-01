@@ -145,6 +145,15 @@ void gen(Node *node){
                 printf("        setle al\n");
                 printf("        movzb rax, al\n");
 		break;
+	case ND_ADDR:
+		gen_lval(node->lhs);
+		return;
+	case ND_DEREF:
+		gen(node->lhs);
+		printf("	pop rax\n");
+		printf("	mov rax, [rax]\n");
+		printf("	push rax\n");
+		return;
         }
         printf("        push rax\n");
 }

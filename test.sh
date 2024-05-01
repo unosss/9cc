@@ -26,4 +26,5 @@ func() {
 
 assert 18 "f(x,y){ return x*y; } main(){ return f(3,6); }"
 assert 10 "f(x){ if(x==0)return 0; y=x-1; return x + f(y); } main(){ return f(4);}"
+assert 3 "main(){ x=3; y=5; z=&y+8; return *z;}"
 echo "done"
