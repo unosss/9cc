@@ -301,17 +301,41 @@ Node *expr(){
 	if(consume_tk(TK_INT)){
 		consume_tk(TK_INT);
                 Node *node = calloc(1,sizeof(Node));
-		node->kind = ND_INT;
-                Token *tok = consume_ident();
-                LVar *lvar = calloc(1, sizeof(LVar));
-                lvar->next = locals;
-                lvar->name = tok->str;
-                lvar->len = tok->len;
-                lvar->offset = locals->offset + 8;
-                node->offset = lvar->offset;
-                locals = lvar;
+		node = declare();
+		Token *tok = consume_ident();
+		LVar *lvar = calloc(1,sizeof(LVar));
+        	lvar->next = locals;
+		lvar->name = tok->str;
+		lvar->len = tok->len;
+        	lvar->offset = node->offset;
+        	locals = lvar;
 		return node;
 	} else	return assign();
+}
+
+Node *declare() {
+	Node *node = calloc(1,sizeof(Node));
+        init_node(&node);
+	LVar *lvar = calloc(1,sizeof(LVar));
+	if (consume(DEREF)){
+		node->kind = ND_DECLARE;
+		node->lhs = declare();
+		lvar->next = locals;
+        	lvar->offset = locals->offset + 8;
+        	node->offset = lvar->offset;
+        	locals = lvar;
+		return node;	
+        }
+	if (token->kind == TK_IDENT){
+		lvar->next = locals;
+		lvar->offset = locals->offset + 8;
+		node->offset = lvar->offset;
+		locals = lvar;
+		node->kind = ND_INT;
+		return node;
+	} else {
+		error("変数がありません");
+	}
 }
 
 Node *equality(){
@@ -427,13 +451,18 @@ Node *unary() {
                 return primary();
         if (consume(SUB))
                 return new_node(ND_SUB, new_node_num(0), primary());
-	if (consume(DEREF))
-		return new_node(ND_DEREF, unary(), new_node_num(0));
-	if (consume(ADDR))
+	if (consume(DEREF)){
+		Node *node = calloc(1,sizeof(Node));
+		node->kind = ND_DEREF;
+		node->lhs = unary();
+		node->rhs = calloc(1,sizeof(Node));
+		return node;
+	}
+	if (consume(ADDR)){
 		return new_node(ND_ADDR, unary(), new_node_num(0));
+	}
         return primary();
 }
-
 
 // 入力文字列pをトークナイズしてそれを返す
 void tokenize() {

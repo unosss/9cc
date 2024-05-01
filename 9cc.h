@@ -54,6 +54,7 @@ typedef enum {
 	ND_DEREF,	// ポインタ
 	ND_ADDR,	// 参照
 	ND_INT,		// int
+	ND_DECLARE,	// 変数の宣言
 } NodeKind;
 
 
@@ -154,6 +155,7 @@ void program();
 Node *assign();
 Node *stmt();
 Node *expr();
+Node *declare();
 Node *equality();
 Node *relational();
 Node *add();

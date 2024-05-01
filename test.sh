@@ -24,7 +24,7 @@ func() {
 	./tmp_function
 }
 
-assert 18 "int f(int x,int y){ return x*y; } int main(){ return f(3,6); }"
+assert 3 "int f(int x, int y){ return x + y; } int main(){ return f(1,2); }"
 assert 10 "int f(int x){ if(x==0)return 0; int y; y=x-1; return x + f(y); } int main(){ return f(4);}"
-assert 3 "int main(){int x; x=3; int y; y=5; int z; z=&y+8; return *z;}"
+assert 5 "int main(){int **z; int *y; *y = 5; z=&y; return **z;}"
 echo "done"
