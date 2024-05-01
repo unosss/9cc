@@ -47,6 +47,7 @@ typedef enum {
 	ND_FUNC,	// 関数の呼び出し
 	ND_DEREF,	// ポインタ
 	ND_ADDR,	// 参照
+	ND_INT,		// int
 } NodeKind;
 
 
@@ -78,6 +79,7 @@ typedef enum {
 	TK_WHILE,    // while
 	TK_FOR,	     // for
 	TK_ELSE,     // else
+	TK_INT,	     // int
 } TokenKind;
 
 typedef struct Token Token;
@@ -122,6 +124,7 @@ extern char *EOS;
 extern char *ASS;
 extern char *ADDR;
 extern char *DEREF;
+extern char *INT;
 
 extern char *user_input;
 

@@ -26,6 +26,7 @@ char *ASS = "=";
 char *COM = ",";
 char *DEREF = "*";
 char *ADDR = "&";
+char *INT = "int";
 
 char *reg[6] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 
@@ -154,6 +155,7 @@ Node *new_node_num(int val){
 void function(){
 	int index = 0;
 	while(!at_eof()) {
+		consume_tk(TK_INT);
 		func_name[index] = calloc(1,sizeof(char));
 		strncpy(func_name[index], token->str, token->len);
 		token = token->next;
@@ -163,8 +165,19 @@ void function(){
 		vec[index] = calloc(1,sizeof(Vector));
 		init_vector(vec[index],6);
 		while(!consume(RB)){
+			consume_tk(TK_INT);
 			Node *buf = calloc(1,sizeof(Node));
-			buf = primary();
+			buf->kind = ND_INT;
+                	Token *tok = consume_ident();
+                	if(tok->kind != TK_IDENT)
+                        	error("'int'の後に変数がありません");
+                	LVar *lvar = calloc(1, sizeof(LVar));
+                	lvar->next = locals;
+                	lvar->name = tok->str;
+                	lvar->len = tok->len;
+                	lvar->offset = locals->offset + 8;
+                	buf->offset = lvar->offset;
+                	locals = lvar;
 			insert_vector(vec[index],buf);
 			if(consume(RB))break;
 			consume(COM);
@@ -277,6 +290,20 @@ Node *stmt(){
 			buf = stmt();
 			insert_vector(node->v, buf);
 		}
+	} else if (consume_tk(TK_INT)) {
+		node->kind = ND_INT;
+		Token *tok = consume_ident();
+		if(tok->kind != TK_IDENT)
+			error_at(tok->str, "'int'の後に変数がありません");
+                LVar *lvar = calloc(1, sizeof(LVar));
+                lvar->next = locals;
+                lvar->name = tok->str;
+                lvar->len = tok->len;
+                lvar->offset = locals->offset + 8;
+                node->offset = lvar->offset;
+                locals = lvar;
+		if (!consume(";"))
+                        error_at(token->str, "';'ではないトークンです");
 	} else {
 		node = expr();
 		if (!consume(";"))
@@ -391,19 +418,13 @@ Node *primary(){
 				error_at(token->str, "')'ではないトークンです");
 			}
 		} else {
-			node->kind = ND_LVAR;
+			node->kind = ND_INT;
 
 			LVar *lvar = find_lvar(tok);
 			if (lvar) {
 				node->offset = lvar->offset;
 			} else {
-				lvar = calloc(1, sizeof(LVar));
-				lvar->next = locals;
-				lvar->name = tok->str;
-				lvar->len = tok->len;
-				lvar->offset = locals->offset + 8;
-				node->offset = lvar->offset;
-				locals = lvar;
+				error("変数が定義されていません");
 			}
 		}
 		return node;
@@ -461,6 +482,11 @@ void tokenize() {
 
 		if (strlen(user_input) >= 4 && strncmp(user_input, "for", 3) == 0 && !is_alnum(user_input[3])) {
 			cur = new_token(TK_FOR, cur, user_input, 3);
+			continue;
+		}
+
+		if(strlen(user_input) >= 4 && strncmp(user_input, "int", 3) == 0 && !is_alnum(user_input[3])) {
+			cur = new_token(TK_INT, cur, user_input, 3);
 			continue;
 		}
 

@@ -9,7 +9,7 @@
 int id = 0;
 
 void gen_lval(Node *node){
-	if(node->kind != ND_LVAR)
+	if(node->kind != ND_INT)
 		error("");
 	printf("	mov rax, rbp\n");
 	printf("	sub rax, %d\n", node->offset);
@@ -21,7 +21,7 @@ void gen(Node *node){
 	case ND_NUM:
 		printf("	push %d\n", node->val);
 		return;
-	case ND_LVAR:
+	case ND_INT:
 		gen_lval(node);
 		printf("	pop rax\n");
 		printf("	mov rax, [rax]\n");
