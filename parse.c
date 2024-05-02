@@ -382,6 +382,7 @@ Node *declare() {
 				LVar *buf_lvar = calloc(1,sizeof(LVar));
 				buf_lvar->next = locals;
                         	buf_lvar->offset = locals->offset + 8;
+				buf->offset = buf_lvar->offset;
 				locals = buf_lvar;
 				Node *val = calloc(1,sizeof(Node));
 				buf->lhs = calloc(1,sizeof(Node));
@@ -396,7 +397,7 @@ Node *declare() {
                                 buf_lvar->offset = locals->offset + 8;
 				buf->lhs->offset = buf_lvar->offset;
                                 locals = buf_lvar;
-                                buf->kind = ND_LVAR;
+                                buf->lhs->kind = ND_LVAR;
 				insert_vector(node->v,buf);
 			}
                         node->offset = at_vector(node->v,size-1)->offset;
@@ -470,6 +471,11 @@ Node *add(){
 				if(node->type->ptr_to->ty == INT)type_size = 4;
 				buf = new_node(ND_MUL, buf, new_node_num(type_size));
                         	node = new_node(ND_ADD, node, buf);
+			} else if(node->type->ty == ARRAY) {
+				buf = mul();
+                                int type_size = 8;
+                                buf = new_node(ND_MUL, buf, new_node_num(type_size));
+                                node = new_node(ND_ADD, node, buf);
 			}
 			else
 				node = new_node(ND_ADD, node, mul());
@@ -549,6 +555,30 @@ Node *primary(){
 
 			// TODO: 関数の返り値を int に固定している
 			node->type->ty = INT;
+		} else if (consume(LLB)) {
+			int index = expect_number();
+			Node *buf1 = calloc(1,sizeof(Node));
+			Node *buf2 = calloc(1,sizeof(Node));
+			buf2->kind = ND_LVAR;
+                        LVar *lvar = find_lvar(tok);
+                        if (lvar) {
+                                buf2->offset = lvar->offset;
+                                buf2->type = calloc(1,sizeof(Type));
+                                buf2->type = lvar->type;
+                        } else {
+                                error("配列 %s が定義されていません", tok->str);
+                        }
+			buf1 = new_node_num(index);
+                        int type_size = 8;
+                        buf1 = new_node(ND_MUL, buf1, new_node_num(type_size));
+                        buf2 = new_node(ND_ADD, buf2, buf1);
+			node->kind = ND_DEREF;
+                        node->lhs = buf2;
+                        node->type = calloc(1,sizeof(Type));
+                        node->type = node->lhs->type->ptr_to;
+			if (!consume(RLB)){
+                                error_at(token->str, "']'ではないトークンです");
+                        }
 		} else {
 			node->kind = ND_LVAR;
 
