@@ -87,6 +87,7 @@ typedef enum {
 	TK_FOR,	     // for
 	TK_ELSE,     // else
 	TK_INT,	     // int
+	TK_SIZEOF,   // sizeof
 } TokenKind;
 
 typedef struct Token Token;
@@ -170,6 +171,8 @@ void gen(Node *node);
 void gen_lval(Node *node);
 
 void gen_type(int index);
+
+void calc_type_depth(Type *type, int *cnt);
 
 bool consume(char *op);
 

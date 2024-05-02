@@ -35,7 +35,6 @@ int main(int argc, char **argv) {
 
 	gen_type(9);
 
-
         tokenize();
 	//Token *check = calloc(1,sizeof(Token));
 	//check = token;

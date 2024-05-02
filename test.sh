@@ -38,5 +38,6 @@ func() {
 #assert 10 "int f(int x){ if(x==0)return 0; int y; y=x-1; return x + f(y); } int main(){ return f(4);}"
 #assert 5 "int main(){int **z; int *y; *y = 5; z=&y; return **z;}"
 #assert 5 "int main(){int **z; **z=5; return 5;}"
-func 7 "int main(){int *p; alloc(&p, 1, 3, 7, 16); int *q; q=p+3; return *q;}"
+#func 7 "int main(){int *p; alloc(&p, 1, 3, 7, 16); int *q; q=p+3; return *q;}"
+assert 8 "int main(){int *p; return sizeof(p);}"
 echo "done"

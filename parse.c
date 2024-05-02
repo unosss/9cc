@@ -139,6 +139,12 @@ Node *new_node(NodeKind kind, Node *lhs, Node *rhs){
         node->kind = kind;
         node->lhs = lhs;
         node->rhs = rhs;
+	node->type = calloc(1,sizeof(Type));
+	int lcnt = 0, rcnt = 0;
+	calc_type_depth(node->lhs->type, &lcnt);
+	calc_type_depth(node->rhs->type, &rcnt);
+	if(lcnt < rcnt)node->type = node->rhs->type;
+	else node->type = node->lhs->type;
 	node->lex = true;
 	node->rex = true;
         return node;
@@ -149,8 +155,8 @@ Node *new_node_num(int val){
 	init_node(&node);
         node->kind = ND_NUM;
         node->val = val;
-	//node->type = calloc(1,sizeof(Type));
-	//node->type->ty = INT;
+	node->type = calloc(1,sizeof(Type));
+	node->type->ty = INT;
         return node;
 }
 
@@ -163,6 +169,13 @@ void gen_type(int index){
 		type_list[index]->ty = PTR;
 	} else {
 		type_list[index]->ty = INT;
+	}
+}
+
+void calc_type_depth(Type *type, int *cnt){
+	if(type->ty == PTR){
+		*cnt = *cnt + 1;
+		calc_type_depth(type->ptr_to, cnt);
 	}
 }
 
@@ -453,6 +466,22 @@ Node *primary(){
                 expect(RB);
                 return node;
         }
+	
+	if (consume(DEREF)){
+                node->kind = ND_DEREF;
+                node->lhs = primary();
+                node->type = calloc(1,sizeof(Type));
+                node->type = node->lhs->type->ptr_to;
+                return node;
+        }
+        if (consume(ADDR)){
+                node = new_node(ND_ADDR, unary(), new_node_num(0));
+                node->type = calloc(1,sizeof(Type));
+                node->type->ty = PTR;
+                node->type->ptr_to = calloc(1,sizeof(Type));
+                node->type->ptr_to = node->lhs->type;
+                return node;
+        }
 
 	Token *tok = consume_ident();
 	if(tok->kind == TK_IDENT){
@@ -494,30 +523,21 @@ Node *primary(){
 
 Node *unary() {
 	Node *node = calloc(1,sizeof(Node));
+	if (consume_tk(TK_SIZEOF)) {
+		node = unary();
+		if(node->type->ty == PTR){
+			return new_node_num(8);
+		} else {
+			return new_node_num(4);
+		}
+	}
         if (consume(ADD)){
 		node = primary();
                 return node;
 	}
         if (consume(SUB)){
 		node = new_node(ND_SUB, new_node_num(0), primary());
-		node->type = calloc(1,sizeof(Type));
-		node->type->ty = INT;
                 return node;
-	}
-	if (consume(DEREF)){
-		node->kind = ND_DEREF;
-		node->lhs = unary();
-		node->type = calloc(1,sizeof(Type));
-		node->type = node->lhs->type->ptr_to;
-		return node;
-	}
-	if (consume(ADDR)){
-		node = new_node(ND_ADDR, unary(), new_node_num(0));
-		node->type = calloc(1,sizeof(Type));
-		node->type->ty = PTR;
-		node->type->ptr_to = calloc(1,sizeof(Type));
-		node->type->ptr_to = node->lhs->type;
-		return node;
 	}
 	node = primary();
         return node;
@@ -535,6 +555,11 @@ void tokenize() {
                         user_input++;
                         continue;
                 }
+
+		if (strlen(user_input) >= 7 && strncmp(user_input, "sizeof", 6) == 0 && !is_alnum(user_input[6])) {
+			cur = new_token(TK_SIZEOF, cur, user_input, 6);
+			continue;
+		}
 
 		if (strlen(user_input) >= 7 && strncmp(user_input, "return", 6) == 0 && !is_alnum(user_input[6])) {
 			cur = new_token(TK_RETURN, cur, user_input, 6);
