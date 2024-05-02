@@ -102,9 +102,10 @@ struct Token {
         int len;        // トークンの長さ
 };
 
+
+// ローカル変数
 typedef struct LVar LVar;
 
-// ローカル変数の型
 struct LVar {
 	LVar *next; // 次の変数かNULL
 	char *name; // 変数の名前
@@ -113,8 +114,36 @@ struct LVar {
 	Type *type;  // type
 };
 
+// 関数名と型を紐づけるマップ
+typedef struct FVar FVar;
+
+struct FVar {
+	FVar *next; // 次の関数かNULL
+	char *name; // 関数名
+	int len;    // 名前の長さ
+	Type *type; // type
+};
+
+// グローバル変数
+typedef struct GVar GVar;
+struct GVar {
+        GVar *next;  // 次の変数かNULL
+        char *name;  // 変数の名前
+        int len;     // 名前の長さ
+        int address; // adress
+        Type *type;  // type
+};
+
+// 関数と変数の識別子
+typedef struct ID {
+	enum { FUNC, VAR } id;
+};
 
 extern LVar *locals;
+
+extern FVar *functions;
+
+extern GVar *glocals;
 
 extern char *ADD;
 extern char *SUB;
@@ -150,13 +179,17 @@ extern Node *code[10][100];
 
 extern char *reg[6];
 
-extern char *func_name[10];
+extern char *common_name[10];
+
+extern char *common_type[10];
 
 extern Vector *vec[10];
 
 extern Type *type_list[10];
 
-void function();
+extern ID common_id[10];
+
+void common();
 void program();
 Node *assign();
 Node *stmt();

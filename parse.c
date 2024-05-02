@@ -33,6 +33,10 @@ char *reg[6] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 
 LVar *locals;
 
+FVar *functions;
+
+GVar *globals;
+
 
 // エラーを報告するための関数
 // printfと同じ引数を取る
@@ -181,38 +185,67 @@ void calc_type_depth(Type *type, int *cnt){
 	}
 }
 
-void function(){
+void common(){
 	int index = 0;
 	while(!at_eof()) {
 		consume_tk(TK_INT);
-		func_name[index] = calloc(1,sizeof(char));
-		strncpy(func_name[index], token->str, token->len);
+		int type_list_index = 0;
+		while(consume("*"))type_list_index++;
+		common_type[index] = type_list[type_list_index];
+		common_name[index] = calloc(1,sizeof(char));
+
+		strncpy(common_name[index], token->str, token->len);
 		token = token->next;
-		if(!consume(LB))
-			error_at(token->str, "'('ではないトークンです");
-		locals = calloc(1, sizeof(LVar));
-		vec[index] = calloc(1,sizeof(Vector));
-		init_vector(vec[index],6);
-		while(!consume(RB)){
-			Node *buf = calloc(1,sizeof(Node));
-			buf = expr();
-			insert_vector(vec[index],buf);
-			if(consume(RB))break;
-			consume(COM);
+		if(!consume(LB)){
+			common_id[index] = VAR;
+			GVar *gvar = calloc(1,sizeof(GVar));
+                        gvar->next = globals;
+                        gvar->name = common_name[index];
+                        gvar->len = strlen(gvar->name);
+                        gvar->type = calloc(1,sizeof(Type));
+                        gvar->type = common_type[index];
+                        globals = gvar;
+			if(consume(LLB)){
+				consume(RLB);
+			} else {
+			}
+		} else {
+			common_id[index] = FUNC;
+			FVar *fvar = calloc(1,sizeof(FVar));
+                	fvar->next = functions;
+                	fvar->name = common_name[index];
+                	fvar->len = strlen(fvar->name);
+                	fvar->type = calloc(1,sizeof(Type));
+                	fvar->type = common_type[index];
+                	functions = fvar;
+			
+			locals = calloc(1, sizeof(LVar));
+			vec[index] = calloc(1,sizeof(Vector));
+			init_vector(vec[index],6);
+			while(!consume(RB)){
+				Node *buf = calloc(1,sizeof(Node));
+				buf = expr();
+				insert_vector(vec[index],buf);
+				if(consume(RB))break;
+				consume(COM);
+			}		
+			if(!consume(LMB))
+				error_at(token->str, "'{'ではないトークンです");
+			program(index++);
+			free(locals);
 		}
-		if(!consume(LMB))
-			error_at(token->str, "'{'ではないトークンです");
-		program(index++);
-		free(locals);
 	}
-	func_name[index] = NULL;
+	common_name[index] = NULL;
 }
 
 void program(int index){
-	int i = 0;
-	while (!consume(RMB))
-		code[index][i++] = stmt();
-	code[index][i] = NULL;
+	if(common_id[index] == FUNC){
+		int i = 0;
+		while (!consume(RMB))
+			code[index][i++] = stmt();
+		code[index][i] = NULL;
+	} else {
+	}
 }
 
 void init_node(Node **node){
@@ -551,42 +584,52 @@ Node *primary(){
 			if (!consume(RB)){
 				error_at(token->str, "')'ではないトークンです");
 			}
-			node->type = calloc(1,sizeof(Type));
-
-			// TODO: 関数の返り値を int に固定している
-			node->type->ty = INT;
+			FVar *fvar = find_fvar(tok);
+                        if (fvar) {
+                                node->type = calloc(1,sizeof(Type));
+                                node->type = fvar->type;
+                        } else {
+                                error("関数 %s が定義されていません", tok->str);
+                        }
 		} else if (consume(LLB)) {
 			int index = expect_number();
 			Node *buf1 = calloc(1,sizeof(Node));
 			Node *buf2 = calloc(1,sizeof(Node));
 			buf2->kind = ND_LVAR;
                         LVar *lvar = find_lvar(tok);
+			GVar *gvar = find_gvar(tok);
                         if (lvar) {
                                 buf2->offset = lvar->offset;
                                 buf2->type = calloc(1,sizeof(Type));
                                 buf2->type = lvar->type;
+				buf1 = new_node_num(index);
+608                         	int type_size = 8;
+609                         	buf1 = new_node(ND_MUL, buf1, new_node_num(type_size));
+610                         	buf2 = new_node(ND_ADD, buf2, buf1);
+611                         	node->kind = ND_DEREF;
+612                         	node->lhs = buf2;
+613                         	node->type = calloc(1,sizeof(Type));
+614                         	node->type = node->lhs->type->ptr_to;
+			} else if (gvar) {
+				// TODO: グローバル変数の処理
                         } else {
+				
                                 error("配列 %s が定義されていません", tok->str);
                         }
-			buf1 = new_node_num(index);
-                        int type_size = 8;
-                        buf1 = new_node(ND_MUL, buf1, new_node_num(type_size));
-                        buf2 = new_node(ND_ADD, buf2, buf1);
-			node->kind = ND_DEREF;
-                        node->lhs = buf2;
-                        node->type = calloc(1,sizeof(Type));
-                        node->type = node->lhs->type->ptr_to;
 			if (!consume(RLB)){
                                 error_at(token->str, "']'ではないトークンです");
                         }
 		} else {
 			node->kind = ND_LVAR;
-
+			
 			LVar *lvar = find_lvar(tok);
+			GVar *gvar = find_gvar(tok);
 			if (lvar) {
 				node->offset = lvar->offset;
 				node->type = calloc(1,sizeof(Type));
 				node->type = lvar->type;
+			} else if (gvar) {
+				// TODO: グローバル変数の処理
 			} else {
 				error("変数 %s が定義されていません", tok->str);
 			}
@@ -719,6 +762,20 @@ LVar *find_lvar(Token *tok) {
 		if (var->len == tok->len && !memcmp(tok->str, var->name, var->len))
 			return var;
 	return NULL;
+}
+
+GVar *find_gvar(Token *tok) {
+        for (GVar *var = globals; var; var = var->next)
+                if (var->len == tok->len && !memcmp(tok->str, var->name, var->len))
+                        return var;
+        return NULL;
+}
+
+FVar *find_fvar(Token *tok) {
+        for (FVar *var = functions; var; var = var->next)
+                if (var->len == tok->len && !memcmp(tok->str, var->name, var->len))
+                        return var;
+        return NULL;
 }
 
 int is_alnum(char c) {
