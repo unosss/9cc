@@ -14,8 +14,9 @@
 typedef struct Type Type;
 
 struct Type {
-	enum { INT, PTR } ty;
+	enum { INT, PTR, ARRAY } ty;
 	struct Type *ptr_to;
+	size_t array_size;
 };
 
 typedef struct Node Node;
@@ -71,7 +72,7 @@ struct Node {
 	bool lex;	// 左辺が使われたかどうか
 	bool rex;	// 右辺が使われたかどうか
 	Vector *v;	// block
-	char *str;	// 関数名
+	char *str;	// 関数名、変数名
 	Type *type;	// type 
 };
 
@@ -123,6 +124,8 @@ extern char *LB;
 extern char *RB;
 extern char *LMB;
 extern char *RMB;
+extern char *LLB;
+extern char *RLB;
 extern char *EQ;
 extern char *NOT_EQ;
 extern char *LARGE;

@@ -15,6 +15,8 @@ char *LB = "(";
 char *RB = ")";
 char *LMB = "{";
 char *RMB = "}";
+char *LLB = "[";
+char *RLB = "]";
 char *EQ = "==";
 char *NOT_EQ = "!=";
 char *LARGE = "<";
@@ -329,11 +331,10 @@ Node *expr(){
 		consume_tk(TK_INT);
                 Node *node = calloc(1,sizeof(Node));
 		node = declare();
-		Token *tok = consume_ident();
 		LVar *lvar = calloc(1,sizeof(LVar));
         	lvar->next = locals;
-		lvar->name = tok->str;
-		lvar->len = tok->len;
+		lvar->name = node->str;
+		lvar->len = strlen(lvar->name);
         	lvar->offset = node->offset;
 		lvar->type = calloc(1,sizeof(Type));
 		lvar->type = node->type;
@@ -359,19 +360,64 @@ Node *declare() {
         	locals = lvar;
 		node->type = calloc(1,sizeof(Type));
 		node->type = lvar->type;
+		node->str = calloc(1,sizeof(char));
+		node->str = node->lhs->str;
 		return node;	
         }
 	if (token->kind == TK_IDENT){
-		lvar->next = locals;
-		lvar->offset = locals->offset + 8;
-		lvar->type = calloc(1,sizeof(Type));
-		lvar->type = type_list[0];
-		node->type = calloc(1,sizeof(Type));
-		node->type = lvar->type;
-		node->offset = lvar->offset;
-		locals = lvar;
-		node->kind = ND_LVAR;
-		return node;
+		Token *tok = consume_ident();
+		node->str = calloc(1,sizeof(char));
+                strncpy(node->str, tok->str, tok->len);
+		if(consume("[")){
+			node->type = calloc(1,sizeof(Type));
+			node->type->ty = ARRAY;
+			int size = expect_number();
+			node->type->array_size = (size_t)size;
+			node->v = calloc(1,sizeof(Vector));
+			init_vector(node->v,size);
+			Vector *vec = calloc(1,sizeof(Vector));
+			init_vector(vec,size);
+			for(int i = 0; i<size;i++){
+				Node *buf = calloc(1,sizeof(Node));
+				LVar *buf_lvar = calloc(1,sizeof(LVar));
+				buf_lvar->next = locals;
+                        	buf_lvar->offset = locals->offset + 8;
+				locals = buf_lvar;
+				Node *val = calloc(1,sizeof(Node));
+				buf->lhs = calloc(1,sizeof(Node));
+				buf->lhs = val;
+				buf->kind = ND_DECLARE;
+				insert_vector(vec, buf);
+			}
+			for(int i = 0; i<size;i++){
+				Node *buf = at_vector(vec,i);
+				LVar *buf_lvar = calloc(1,sizeof(LVar));
+                                buf_lvar->next = locals;
+                                buf_lvar->offset = locals->offset + 8;
+				buf->lhs->offset = buf_lvar->offset;
+                                locals = buf_lvar;
+                                buf->kind = ND_LVAR;
+				insert_vector(node->v,buf);
+			}
+                        node->offset = at_vector(node->v,size-1)->offset;
+                        node->kind = ND_BLOCK;
+			// どのような型に対する配列か。TODO: int 型、およびそれへのポインタ型に限定
+			node->type->ptr_to = calloc(1,sizeof(Type));
+			node->type->ptr_to = type_list[0];
+			consume("]");
+			return node;
+		} else {	
+			lvar->next = locals;
+			lvar->offset = locals->offset + 8;
+			lvar->type = calloc(1,sizeof(Type));
+			lvar->type = type_list[0];
+			node->type = calloc(1,sizeof(Type));
+			node->type = lvar->type;
+			node->offset = lvar->offset;
+			locals = lvar;
+			node->kind = ND_LVAR;
+			return node;
+		}
 	} else {
 		error("変数がありません");
 	}
@@ -615,7 +661,8 @@ void tokenize() {
 
                 if (*user_input == *ADD || *user_input == *SUB || *user_input == *MUL || *user_input == *DIV
 			       	|| *user_input == *LB || *user_input == *RB || *user_input == *LMB || *user_input == *RMB 
-				|| *user_input == *COM || *user_input == *ADDR || *user_input == *DEREF) {
+				|| *user_input == *COM || *user_input == *ADDR || *user_input == *DEREF || *user_input == *LLB
+				|| *user_input == *RLB) {
                         cur = new_token(TK_RESERVED, cur, user_input, 1);
                         continue;
                 }
