@@ -651,6 +651,7 @@ Node *primary(){
                                 node->type = calloc(1,sizeof(Type));
                                 node->type = fvar->type;
                         } else {
+				// TODO: 外部関数を呼び出す場合、以下のエラー処理をコメントアウトする必要あり
                                 error("関数 %s が定義されていません", tok->str);
                         }
 		} else if (consume(LLB)) {
@@ -674,6 +675,7 @@ Node *primary(){
                          	node->type = node->lhs->type->ptr_to;
 			} else if (gvar) {
 				// TODO: グローバル変数の処理
+				// グローバル変数の値は書き換え不可らしい
 				node->kind = ND_GVAR;
 				node->str = calloc(1,sizeof(char));
 				node->str = gvar->name;
@@ -698,6 +700,7 @@ Node *primary(){
 				node->type = lvar->type;
 			} else if (gvar) {
 				// TODO: グローバル変数の処理
+				// グローバル変数の値は書き換え不可らしい
 				node->kind = ND_GVAR;
                                 node->str = calloc(1,sizeof(char));
                                 node->str = gvar->name;
