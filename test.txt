@@ -1,6 +1,18 @@
+
+/*
+
+test
+
+*/
+
+
 int main(){
 	char *x;
+	
 	x="Hello World!";
+	
+	// hello は外部関数を利用
+	
 	hello(x);
 	return 0;
 }

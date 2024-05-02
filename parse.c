@@ -803,11 +803,28 @@ void tokenize() {
         Token *cur = &head;
 
         while (*user_input) {
-// 空白文字をスキップ
+		// 空白文字をスキップ
                 if (isspace(*user_input)) {
                         user_input++;
                         continue;
                 }
+		// 行コメントをスキップ
+    		if (strncmp(user_input, "//", 2) == 0) {
+      			user_input += 2;
+      			while (*user_input != '\n')
+        		user_input++;
+      			continue;
+    		}
+
+    		// ブロックコメントをスキップ
+    		if (strncmp(user_input, "/*", 2) == 0) {
+      			char *q = strstr(user_input + 2, "*/");
+      			if (!q)
+        			error_at(user_input, "コメントが閉じられていません");
+      			user_input = q + 2;
+      			continue;
+    		}
+
 		if (*user_input == *DQ) {
 			int len = 0;
 			int dq_cnt = 0;
