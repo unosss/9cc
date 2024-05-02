@@ -72,7 +72,7 @@ struct Node {
 	bool rex;	// 右辺が使われたかどうか
 	Vector *v;	// block
 	char *str;	// 関数名
-	Type type;	// type 
+	Type *type;	// type 
 };
 
 // トークンの種類
@@ -108,6 +108,7 @@ struct LVar {
 	char *name; // 変数の名前
 	int len;    // 名前の長さ
 	int offset; // RBPからのオフセット
+	Type *type;  // type
 };
 
 
@@ -149,6 +150,8 @@ extern char *func_name[10];
 
 extern Vector *vec[10];
 
+extern Type *type_list[10];
+
 void function();
 void program();
 Node *assign();
@@ -165,6 +168,8 @@ Node *unary();
 void gen(Node *node);
 
 void gen_lval(Node *node);
+
+void gen_type(int index);
 
 bool consume(char *op);
 

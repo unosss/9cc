@@ -20,6 +20,8 @@ char *func_name[10];
 
 Vector *vec[10];
 
+Type *type_list[10];
+
 int main(int argc, char **argv) {
         if (argc != 2) {
                 error("引数の個数が正しくありません");
@@ -30,6 +32,9 @@ int main(int argc, char **argv) {
         user_input_orig = argv[1];
 
 	user_input = user_input_orig;
+
+	gen_type(9);
+
 
         tokenize();
 	//Token *check = calloc(1,sizeof(Token));

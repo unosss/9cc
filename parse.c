@@ -149,7 +149,21 @@ Node *new_node_num(int val){
 	init_node(&node);
         node->kind = ND_NUM;
         node->val = val;
+	//node->type = calloc(1,sizeof(Type));
+	//node->type->ty = INT;
         return node;
+}
+
+void gen_type(int index){
+	type_list[index] = calloc(1,sizeof(Type));
+	if(index){
+		gen_type(index-1);
+		type_list[index]->ptr_to = calloc(1,sizeof(Type));
+		type_list[index]->ptr_to = type_list[index-1];
+		type_list[index]->ty = PTR;
+	} else {
+		type_list[index]->ty = INT;
+	}
 }
 
 void function(){
@@ -308,6 +322,8 @@ Node *expr(){
 		lvar->name = tok->str;
 		lvar->len = tok->len;
         	lvar->offset = node->offset;
+		lvar->type = calloc(1,sizeof(Type));
+		lvar->type = node->type;
         	locals = lvar;
 		return node;
 	} else	return assign();
@@ -320,15 +336,25 @@ Node *declare() {
 	if (consume(DEREF)){
 		node->kind = ND_DECLARE;
 		node->lhs = declare();
+		lvar->type = calloc(1,sizeof(Type));
+		lvar->type->ty = PTR;
+		lvar->type->ptr_to = calloc(1,sizeof(Type));
+		lvar->type->ptr_to = node->lhs->type;
 		lvar->next = locals;
         	lvar->offset = locals->offset + 8;
         	node->offset = lvar->offset;
         	locals = lvar;
+		node->type = calloc(1,sizeof(Type));
+		node->type = lvar->type;
 		return node;	
         }
 	if (token->kind == TK_IDENT){
 		lvar->next = locals;
 		lvar->offset = locals->offset + 8;
+		lvar->type = calloc(1,sizeof(Type));
+		lvar->type = type_list[0];
+		node->type = calloc(1,sizeof(Type));
+		node->type = lvar->type;
 		node->offset = lvar->offset;
 		locals = lvar;
 		node->kind = ND_LVAR;
@@ -376,12 +402,29 @@ Node *add(){
         Node *node = calloc(1,sizeof(Node));
 	init_node(&node);
 	node = mul();
+	Node *buf = calloc(1,sizeof(Node));
         for (;;){
-                if(consume(ADD))
-                        node = new_node(ND_ADD, node, mul());
-                else if(consume(SUB))
-                        node = new_node(ND_SUB, node, mul());
-                else
+                if(consume(ADD)){
+			if(node->type->ty == PTR){
+				buf = mul();
+				int type_size = 8;
+				if(node->type->ptr_to->ty == INT)type_size = 4;
+				buf = new_node(ND_MUL, buf, new_node_num(type_size));
+                        	node = new_node(ND_ADD, node, buf);
+			}
+			else
+				node = new_node(ND_ADD, node, mul());
+		} else if(consume(SUB)){
+			if(node->type->ty == PTR){
+                                buf = mul();
+				int type_size = 8;
+                                if(node->type->ptr_to->ty == INT)type_size = 4;
+                                buf = new_node(ND_MUL, buf, new_node_num(type_size));
+                                node = new_node(ND_SUB, node, buf);
+			}
+                        else
+                                node = new_node(ND_SUB, node, mul());
+		} else
                         return node;
 
         }
@@ -402,10 +445,10 @@ Node *mul(){
 }
 
 Node *primary(){
+	Node *node = calloc(1,sizeof(Node));
+        init_node(&node);
         // 次のトークンが"("なら、"(" expr ")"のはず
         if(consume(LB)){
-                Node *node = calloc(1,sizeof(Node));
-		init_node(&node);
 		node = expr();
                 expect(RB);
                 return node;
@@ -413,8 +456,6 @@ Node *primary(){
 
 	Token *tok = consume_ident();
 	if(tok->kind == TK_IDENT){
-		Node *node = calloc(1, sizeof(Node));
-		init_node(&node);
 		if (consume(LB)){
 			node->v = calloc(1,sizeof(Vector));
 			init_vector(node->v, 6);
@@ -422,46 +463,64 @@ Node *primary(){
 			node->str = calloc(1,sizeof(char));
 			strncpy(node->str, tok->str, tok->len);
 			for (;;) {
-				Node *buf = primary();
+				Node *buf = unary();
 				insert_vector(node->v, buf);
 				if(!consume(COM))break;
 			}
 			if (!consume(RB)){
 				error_at(token->str, "')'ではないトークンです");
 			}
+			node->type = calloc(1,sizeof(Type));
+			node->type->ty = INT;
 		} else {
 			node->kind = ND_LVAR;
 
 			LVar *lvar = find_lvar(tok);
 			if (lvar) {
 				node->offset = lvar->offset;
+				node->type = calloc(1,sizeof(Type));
+				node->type = lvar->type;
 			} else {
-				error("変数が定義されていません");
+				error("変数 %s が定義されていません", tok->str);
 			}
 		}
 		return node;
 	}
 
         // そうでなければ数値のはず
-        return new_node_num(expect_number());
+	node = new_node_num(expect_number());
+        return node;
 }
 
 Node *unary() {
-        if (consume(ADD))
-                return primary();
-        if (consume(SUB))
-                return new_node(ND_SUB, new_node_num(0), primary());
+	Node *node = calloc(1,sizeof(Node));
+        if (consume(ADD)){
+		node = primary();
+                return node;
+	}
+        if (consume(SUB)){
+		node = new_node(ND_SUB, new_node_num(0), primary());
+		node->type = calloc(1,sizeof(Type));
+		node->type->ty = INT;
+                return node;
+	}
 	if (consume(DEREF)){
-		Node *node = calloc(1,sizeof(Node));
 		node->kind = ND_DEREF;
 		node->lhs = unary();
-		node->rhs = calloc(1,sizeof(Node));
+		node->type = calloc(1,sizeof(Type));
+		node->type = node->lhs->type->ptr_to;
 		return node;
 	}
 	if (consume(ADDR)){
-		return new_node(ND_ADDR, unary(), new_node_num(0));
+		node = new_node(ND_ADDR, unary(), new_node_num(0));
+		node->type = calloc(1,sizeof(Type));
+		node->type->ty = PTR;
+		node->type->ptr_to = calloc(1,sizeof(Type));
+		node->type->ptr_to = node->lhs->type;
+		return node;
 	}
-        return primary();
+	node = primary();
+        return node;
 }
 
 // 入力文字列pをトークナイズしてそれを返す

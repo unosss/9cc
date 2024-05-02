@@ -17,14 +17,26 @@ assert() {
 }
 
 func() {
-	input="$1"
-	echo "$input"
+	expected="$1"
+	input="$2"
+	
 	./9cc "$input" > tmp_function.s
-	cc -o tmp_function tmp_function.s foo.o
+	cc -o tmp_function tmp_function.s alloc.o
 	./tmp_function
+	actual="$?"
+
+        if [ "$actual" = "$expected" ]; then
+                echo "($input) => $actual"
+        else
+                echo "($input) => $expected expected, but got $actual"
+                exit 1
+        fi
 }
 
-assert 3 "int f(int x, int y){ return x + y; } int main(){ return f(1,2); }"
-assert 10 "int f(int x){ if(x==0)return 0; int y; y=x-1; return x + f(y); } int main(){ return f(4);}"
-assert 5 "int main(){int **z; int *y; *y = 5; z=&y; return **z;}"
+#assert 6 "int main(){ int x; x=3; int y; y=3; return x+y;}"
+#assert 3 "int f(int x, int y){ return x+y; } int main(){ return f(1,2); }"
+#assert 10 "int f(int x){ if(x==0)return 0; int y; y=x-1; return x + f(y); } int main(){ return f(4);}"
+#assert 5 "int main(){int **z; int *y; *y = 5; z=&y; return **z;}"
+#assert 5 "int main(){int **z; **z=5; return 5;}"
+func 7 "int main(){int *p; alloc(&p, 1, 3, 7, 16); int *q; q=p+3; return *q;}"
 echo "done"
