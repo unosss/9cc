@@ -40,6 +40,11 @@ void gen(Node *node){
 			printf("        push rax\n");
 		}
 		return;
+	case ND_GLC:
+		printf("	lea rdi, [rip + %s]\n", node->str);
+		printf("	mov eax, 0\n");
+		printf("	push rdi\n");
+		return ;
 	case ND_ASSIGN:
 		if(node->lhs->kind == ND_DEREF){
 			gen(node->lhs->lhs);
@@ -83,6 +88,9 @@ void gen(Node *node){
 		return;
 	case ND_GCHAR:
 		printf("	.byte %d\n", node->val);
+		return;
+	case ND_LC:
+		printf("	.string %s\n", node->lc);
 		return;
 	case ND_RETURN:
 		gen(node->lhs);

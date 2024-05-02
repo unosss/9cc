@@ -59,6 +59,8 @@ typedef enum {
 	ND_GVAR,	// グローバル変数
 	ND_GINT,	// グローバル変数の宣言 + intで初期化
 	ND_GCHAR,	// グローバル変数の宣言 + charで初期化
+	ND_LC,		// 文字列リテラルの宣言
+	ND_GLC,		// グローバル領域にある文字列リテラル
 } NodeKind;
 
 
@@ -78,7 +80,8 @@ struct Node {
 	bool rex;	// 右辺が使われたかどうか
 	Vector *v;	// block
 	char *str;	// 関数名、変数名
-	Type *type;	// type 
+	Type *type;	// type
+	char *lc;	// 文字列リテラル 
 };
 
 // トークンの種類
@@ -95,6 +98,7 @@ typedef enum {
 	TK_INT,	     // int
 	TK_SIZEOF,   // sizeof
 	TK_CHAR,     // char
+	TK_LC,	     // 文字列リテラル
 } TokenKind;
 
 typedef struct Token Token;
@@ -139,6 +143,14 @@ struct GVar {
         Type *type;  // type
 };
 
+// 文字列リテラル
+typedef struct LC LC;
+struct LC {
+	LC *next;    // 次の文字列リテラル
+	char *name;  // 変数の名前
+	int len;     // 名前の長さ 
+}; 
+
 // 関数と変数の識別子
 typedef enum {
 	FUNC,
@@ -150,6 +162,8 @@ extern LVar *locals;
 extern FVar *functions;
 
 extern GVar *glocals;
+
+extern LC *lcs;
 
 extern char *ADD;
 extern char *SUB;
@@ -171,12 +185,15 @@ extern char *EOS;
 extern char *ASS;
 extern char *ADDR;
 extern char *DEREF;
+extern char *DQ;
 
 extern char *user_input;
 
 extern char *user_input_orig;
 
+// 制御演算子のナンバリングに使用
 extern int id;
+
 
 // 現在着目しているトークン
 extern Token *token;
@@ -190,6 +207,8 @@ extern char *common_name[10];
 extern Type *common_type[10];
 
 extern Vector *vec[10];
+
+extern Vector *lc;
 
 extern Type *int_list[10];
 
@@ -237,6 +256,8 @@ LVar *find_lvar(Token *tok);
 FVar *find_fvar(Token *tok);
 
 GVar *find_gvar(Token *tok);
+
+LC *find_lc(Token *tok);
 
 int is_alnum(char c);
 

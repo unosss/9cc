@@ -28,6 +28,7 @@ char *ASS = "=";
 char *COM = ",";
 char *DEREF = "*";
 char *ADDR = "&";
+char *DQ = "\"";
 
 char *reg[6] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 
@@ -36,6 +37,8 @@ LVar *locals;
 FVar *functions;
 
 GVar *globals;
+
+LC *lcs;
 
 
 // エラーを報告するための関数
@@ -284,8 +287,11 @@ void common(){
 void program(int index){
 	if(common_id[index] == FUNC){
 		int i = 0;
-		while (!consume(RMB))
-			code[index][i++] = stmt();
+		while (!consume(RMB)){
+			Node *buf = stmt();
+			if(buf->kind == ND_LC)continue;
+			code[index][i++] = buf;
+		}
 		code[index][i] = NULL;
 	}
 }
@@ -396,8 +402,21 @@ Node *assign(){
 	Node *node = calloc(1,sizeof(Node));
 	init_node(&node);
         node = equality();
-	if (consume("="))
-		node = new_node(ND_ASSIGN, node, assign());
+	if (consume("=")){
+		Node *buf = calloc(1,sizeof(Node));
+		buf = assign();
+		if(buf->kind == ND_LC){
+			node->lc = calloc(1,sizeof(char));
+			node->lc = buf->lc;
+			node->kind = buf->kind;
+			insert_vector(lc, node);
+			LC *lc = calloc(1,sizeof(LC));
+			lc->name = node->str;
+			lc->len = strlen(lc->name);
+			lc->next = lcs;
+			lcs = lc;
+		} else node = new_node(ND_ASSIGN, node, buf);
+	}
 	return node;
 }
 
@@ -613,7 +632,6 @@ Node *primary(){
                 expect(RB);
                 return node;
         }
-	
 	if (consume(DEREF)){
                 node->kind = ND_DEREF;
                 node->lhs = primary();
@@ -629,7 +647,13 @@ Node *primary(){
                 node->type->ptr_to = node->lhs->type;
                 return node;
         }
-
+	if(token->kind == TK_LC){
+		node->kind = ND_LC;
+		node->lc = calloc(1,sizeof(char));
+		strncpy(node->lc, token->str, token->len);
+		consume_tk(TK_LC);
+		return node;
+	}
 	Token *tok = consume_ident();
 	if(tok->kind == TK_IDENT){
 		if (consume(LB)){
@@ -652,7 +676,7 @@ Node *primary(){
                                 node->type = fvar->type;
                         } else {
 				// TODO: 外部関数を呼び出す場合、以下のエラー処理をコメントアウトする必要あり
-                                error("関数 %s が定義されていません", tok->str);
+                                //error("関数 %s が定義されていません", tok->str);
                         }
 		} else if (consume(LLB)) {
 			int index = expect_number();
@@ -673,6 +697,8 @@ Node *primary(){
                          	node->kind = ND_DEREF;
                          	node->lhs = buf2;
                          	node->type = node->lhs->type->ptr_to;
+				node->str = calloc(1,sizeof(char));
+                                node->str = lvar->name;
 			} else if (gvar) {
 				// TODO: グローバル変数の処理
 				// グローバル変数の値は書き換え不可らしい
@@ -681,6 +707,7 @@ Node *primary(){
 				node->str = gvar->name;
 				node->type = gvar->type;
 				if(gvar->type->ptr_to->ty == INT)node->memory = index * 4;
+				else if(gvar->type->ty == CHAR)node->memory = index;
 				else node->memory = index * 8;
                         } else {
 				
@@ -693,11 +720,19 @@ Node *primary(){
 			
 			LVar *lvar = find_lvar(tok);
 			GVar *gvar = find_gvar(tok);
+			LC *lc = find_lc(tok);
 			node->type = calloc(1,sizeof(Type));
-			if (lvar) {
+			if (lc) {
+				node->kind = ND_GLC;
+				//	node->kind = ND_GVAR;
+                                node->str = calloc(1,sizeof(char));
+                                node->str = lc->name;
+			} else if (lvar) {
 				node->kind = ND_LVAR;
 				node->offset = lvar->offset;
 				node->type = lvar->type;
+				node->str = calloc(1,sizeof(char));
+				node->str = lvar->name;
 			} else if (gvar) {
 				// TODO: グローバル変数の処理
 				// グローバル変数の値は書き換え不可らしい
@@ -706,6 +741,7 @@ Node *primary(){
                                 node->str = gvar->name;
 				node->type = gvar->type;
                                 if(gvar->type->ty == INT)node->memory = 4;
+				else if(gvar->type->ty == CHAR)node->memory = 1;
                                 else node->memory = 8;
 			} else {
 				error("変数 %s が定義されていません", tok->str);
@@ -753,6 +789,21 @@ void tokenize() {
                         user_input++;
                         continue;
                 }
+		if (*user_input == *DQ) {
+			int len = 0;
+			int dq_cnt = 0;
+			char *ptr = calloc(1,sizeof(char));
+			ptr = user_input;
+			while(dq_cnt < 2){
+				if( *ptr == *DQ){
+					dq_cnt++;
+				}
+				ptr++;
+				len++;
+			}
+			cur = new_token(TK_LC, cur, user_input, len);
+			continue;
+		}
 
 		if (strlen(user_input) >= 7 && strncmp(user_input, "sizeof", 6) == 0 && !is_alnum(user_input[6])) {
 			cur = new_token(TK_SIZEOF, cur, user_input, 6);
@@ -858,6 +909,13 @@ FVar *find_fvar(Token *tok) {
                 if (var->len == tok->len && !memcmp(tok->str, var->name, var->len))
                         return var;
         return NULL;
+}
+
+LC *find_lc(Token *tok) {
+	for (LC *lc = lcs; lc; lc = lc->next)
+		if (lc->len == tok->len && !memcmp(tok->str, lc->name, lc->len))
+			return lc;
+	return NULL;
 }
 
 int is_alnum(char c) {

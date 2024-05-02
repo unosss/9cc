@@ -28,6 +28,8 @@ Type *char_list[10];
 
 ID common_id[10];
 
+Vector *lc;
+
 int main(int argc, char **argv) {
         if (argc != 2) {
                 error("引数の個数が正しくありません");
@@ -42,6 +44,10 @@ int main(int argc, char **argv) {
 	gen_int(9);
 	gen_char(9);
 
+
+	lc = calloc(1,sizeof(Vector));
+	init_vector(lc, 10);
+
         tokenize();
 	//Token *check = calloc(1,sizeof(Token));
 	//check = token;
@@ -53,11 +59,19 @@ int main(int argc, char **argv) {
 	// アセンブリの前半部分を出力
         printf(".intel_syntax noprefix\n");
         printf(".globl");
-	for(int i = 0; common_name[i]; i++){
+	for(int i = 0; i < lc->used; i++){
 		if(i)printf(",");
+		printf(" %s", at_vector(lc, i)->str);
+	}
+	for(int i = 0; common_name[i]; i++){
+		if(i || lc->used)printf(",");
 		printf(" %s", common_name[i]);
 	}
 	printf("\n");
+	for(int i = 0;i < lc->used; i++){
+		printf("%s:\n", at_vector(lc, i)->str);
+		gen(at_vector(lc, i));
+	}	
         for(int i = 0; common_name[i]; i++){
 		printf("%s:\n", common_name[i]);
 		if(common_id[i] == FUNC){// 関数の場合の出力
