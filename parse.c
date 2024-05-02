@@ -203,11 +203,36 @@ void common(){
                         gvar->name = common_name[index];
                         gvar->len = strlen(gvar->name);
                         gvar->type = calloc(1,sizeof(Type));
-                        gvar->type = common_type[index];
-                        globals = gvar;
+			Node *node = calloc(1,sizeof(Node));
+			node->kind = ND_GDECLARE;
 			if(consume(LLB)){
+				gvar->type->ptr_to = calloc(1,sizeof(Type));
+				gvar->type->ptr_to = common_type[index];
+				gvar->type->ty = ARRAY;
+				int size = expect_number();
+				gvar->type->array_size = size;
+				if(gvar->type->ptr_to->ty == INT)node->memory = 4*size;
+				else node->memory = 8*size;
 				consume(RLB);
 			} else {
+				gvar->type = common_type[index];
+				if(gvar->type->ty == INT)node->memory = 4;
+				else node->memory = 8;
+			}
+			globals = gvar;
+			if(consume("=")){
+				if(gvar->type->ty != ARRAY){
+					node->kind = ND_GINT;
+					node->val = expect_number();
+				}
+				else {// TODO: 配列の初期化
+				}
+			}
+			code[index][0] = node;
+                        code[index][1] = NULL;
+                        index++;
+			if(!consume(";")){
+				error_at(token->str, "';'ではないトークンです");
 			}
 		} else {
 			common_id[index] = FUNC;
@@ -244,7 +269,6 @@ void program(int index){
 		while (!consume(RMB))
 			code[index][i++] = stmt();
 		code[index][i] = NULL;
-	} else {
 	}
 }
 
@@ -381,7 +405,7 @@ Node *declare() {
         init_node(&node);
 	LVar *lvar = calloc(1,sizeof(LVar));
 	if (consume(DEREF)){
-		node->kind = ND_DECLARE;
+		node->kind = ND_LDECLARE;
 		node->lhs = declare();
 		lvar->type = calloc(1,sizeof(Type));
 		lvar->type->ty = PTR;
@@ -420,7 +444,7 @@ Node *declare() {
 				Node *val = calloc(1,sizeof(Node));
 				buf->lhs = calloc(1,sizeof(Node));
 				buf->lhs = val;
-				buf->kind = ND_DECLARE;
+				buf->kind = ND_LDECLARE;
 				insert_vector(vec, buf);
 			}
 			for(int i = 0; i<size;i++){
@@ -598,6 +622,7 @@ Node *primary(){
 			buf2->kind = ND_LVAR;
                         LVar *lvar = find_lvar(tok);
 			GVar *gvar = find_gvar(tok);
+			node->type = calloc(1,sizeof(Type));
                         if (lvar) {
                                 buf2->offset = lvar->offset;
                                 buf2->type = calloc(1,sizeof(Type));
@@ -608,10 +633,15 @@ Node *primary(){
                          	buf2 = new_node(ND_ADD, buf2, buf1);
                          	node->kind = ND_DEREF;
                          	node->lhs = buf2;
-                         	node->type = calloc(1,sizeof(Type));
                          	node->type = node->lhs->type->ptr_to;
 			} else if (gvar) {
 				// TODO: グローバル変数の処理
+				node->kind = ND_GVAR;
+				node->str = calloc(1,sizeof(char));
+				node->str = gvar->name;
+				node->type = gvar->type;
+				if(gvar->type->ptr_to->ty == INT)node->memory = index * 4;
+				else node->memory = index * 8;
                         } else {
 				
                                 error("配列 %s が定義されていません", tok->str);
@@ -620,16 +650,22 @@ Node *primary(){
                                 error_at(token->str, "']'ではないトークンです");
                         }
 		} else {
-			node->kind = ND_LVAR;
 			
 			LVar *lvar = find_lvar(tok);
 			GVar *gvar = find_gvar(tok);
+			node->type = calloc(1,sizeof(Type));
 			if (lvar) {
+				node->kind = ND_LVAR;
 				node->offset = lvar->offset;
-				node->type = calloc(1,sizeof(Type));
 				node->type = lvar->type;
 			} else if (gvar) {
 				// TODO: グローバル変数の処理
+				node->kind = ND_GVAR;
+                                node->str = calloc(1,sizeof(char));
+                                node->str = gvar->name;
+				node->type = gvar->type;
+                                if(gvar->type->ty == INT)node->memory = 4;
+                                else node->memory = 8;
 			} else {
 				error("変数 %s が定義されていません", tok->str);
 			}

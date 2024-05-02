@@ -75,6 +75,9 @@ int main(int argc, char **argv) {
         			if(code[i][j]->kind != ND_RETURN)printf("        pop rax\n");
         		}
 		} else {// グローバル変数の場合の出力
+			for(int j = 0; code[i][j];j++){
+				gen(code[i][j]);
+			}
 		}
 	}
 	return 0;

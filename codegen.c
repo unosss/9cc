@@ -25,9 +25,27 @@ void gen(Node *node){
 		printf("	mov rax, [rax]\n");
 		printf("	push rax\n");
 		return;
+	case ND_GVAR:
+		if(node->type->ty == ARRAY){
+			printf("	mov rax, [rip + %s+%d]\n", node->str, node->memory);
+			printf("	push rax\n");
+		} else {
+			printf("        mov rax, [rip + %s]\n", node->str);
+			printf("        push rax\n");
+		}
+		return;
 	case ND_ASSIGN:
-		if(node->lhs->kind != ND_DEREF)gen_lval(node->lhs);
-		else gen(node->lhs->lhs);
+		if(node->lhs->kind == ND_DEREF){
+			gen(node->lhs->lhs);
+		}else if(node->lhs->kind == ND_GVAR){
+			if(node->type->ty == ARRAY){
+				printf("	mov rax, [rip + %s+%d]\n",node->str,node->memory);
+				printf("	push rax\n");
+			}else{
+				printf("        mov rax, [rip + %s]\n",node->str);
+				printf("        push rax\n");
+			}
+		}else gen_lval(node->lhs);
 		gen(node->rhs);
 
 		printf("	pop rdi\n");
@@ -35,7 +53,7 @@ void gen(Node *node){
 		printf("	mov [rax], rdi\n");
 		printf("	push rdi\n");
 		return;
-	case ND_DECLARE:
+	case ND_LDECLARE:
 		gen_lval(node);
 		if(node->lhs->kind != ND_LVAR)gen(node->lhs);
 		else gen_lval(node->lhs);
@@ -44,6 +62,12 @@ void gen(Node *node){
 		printf("        pop rax\n");
 		printf("        mov [rax], rdi\n");
 		printf("        push rax\n");
+		return;
+	case ND_GDECLARE:
+		printf("	.zero %d\n", node->memory);
+		return;
+	case ND_GINT:
+		printf("        .int %d\n", node->val);
 		return;
 	case ND_RETURN:
 		gen(node->lhs);

@@ -54,7 +54,10 @@ typedef enum {
 	ND_FUNC,	// 関数の呼び出し
 	ND_DEREF,	// ポインタ
 	ND_ADDR,	// 参照
-	ND_DECLARE,	// 変数の宣言
+	ND_LDECLARE,	// ローカル変数の宣言
+	ND_GDECLARE,	// グローバル変数の宣言
+	ND_GVAR,	// グローバル変数
+	ND_GINT,	// グローバル変数の宣言 + intで初期化
 } NodeKind;
 
 
@@ -65,8 +68,9 @@ struct Node {
 	Node *m1hs;	// 中間ノード１
 	Node *m2hs;	// 中間ノード２
         Node *rhs;      // 右辺
-        int val;        // kindがND_NUMの場合のみ使う
-	int offset;	// kindがND_LVARの場合のみ使う
+        int val;        // 値
+	int offset;	// RBPからのオフセット
+	int memory;	// グローバル変数が確保するメモリ
 	bool m1ex;	// 中間ノード１が使われたかどうか
 	bool m2ex;	// 中間ノード２が使われたかどうか
 	bool lex;	// 左辺が使われたかどうか
@@ -130,7 +134,6 @@ struct GVar {
         GVar *next;  // 次の変数かNULL
         char *name;  // 変数の名前
         int len;     // 名前の長さ
-        int address; // adress
         Type *type;  // type
 };
 
