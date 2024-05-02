@@ -69,6 +69,9 @@ void gen(Node *node){
 	case ND_GINT:
 		printf("        .int %d\n", node->val);
 		return;
+	case ND_GCHAR:
+		printf("	.byte %d\n", node->val);
+		return;
 	case ND_RETURN:
 		gen(node->lhs);
 		printf("        pop rax\n");

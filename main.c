@@ -22,7 +22,9 @@ Type *common_type[10];
 
 Vector *vec[10];
 
-Type *type_list[10];
+Type *int_list[10];
+
+Type *char_list[10];
 
 ID common_id[10];
 
@@ -37,7 +39,8 @@ int main(int argc, char **argv) {
 
 	user_input = user_input_orig;
 
-	gen_type(9);
+	gen_int(9);
+	gen_char(9);
 
         tokenize();
 	//Token *check = calloc(1,sizeof(Token));

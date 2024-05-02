@@ -166,16 +166,28 @@ Node *new_node_num(int val){
         return node;
 }
 
-void gen_type(int index){
-	type_list[index] = calloc(1,sizeof(Type));
+void gen_int(int index){
+	int_list[index] = calloc(1,sizeof(Type));
 	if(index){
-		gen_type(index-1);
-		type_list[index]->ptr_to = calloc(1,sizeof(Type));
-		type_list[index]->ptr_to = type_list[index-1];
-		type_list[index]->ty = PTR;
+		gen_int(index-1);
+		int_list[index]->ptr_to = calloc(1,sizeof(Type));
+		int_list[index]->ptr_to = int_list[index-1];
+		int_list[index]->ty = PTR;
 	} else {
-		type_list[index]->ty = INT;
+		int_list[index]->ty = INT;
 	}
+}
+
+void gen_char(int index){
+        char_list[index] = calloc(1,sizeof(Type));
+        if(index){
+                gen_char(index-1);
+                char_list[index]->ptr_to = calloc(1,sizeof(Type));
+                char_list[index]->ptr_to = char_list[index-1];
+                char_list[index]->ty = PTR;
+        } else {
+                char_list[index]->ty = CHAR;
+        }
 }
 
 void calc_type_depth(Type *type, int *cnt){
@@ -188,12 +200,14 @@ void calc_type_depth(Type *type, int *cnt){
 void common(){
 	int index = 0;
 	while(!at_eof()) {
-		consume_tk(TK_INT);
 		int type_list_index = 0;
 		while(consume("*"))type_list_index++;
-		common_type[index] = type_list[type_list_index];
+		if(consume_tk(TK_INT)){
+			common_type[index] = int_list[type_list_index];
+		} else if(consume_tk(TK_CHAR)){
+			common_type[index] = char_list[type_list_index];
+		}
 		common_name[index] = calloc(1,sizeof(char));
-
 		strncpy(common_name[index], token->str, token->len);
 		token = token->next;
 		if(!consume(LB)){
@@ -212,20 +226,24 @@ void common(){
 				int size = expect_number();
 				gvar->type->array_size = size;
 				if(gvar->type->ptr_to->ty == INT)node->memory = 4*size;
+				else if(gvar->type->ptr_to->ty == CHAR)node->memory = size;
 				else node->memory = 8*size;
 				consume(RLB);
 			} else {
 				gvar->type = common_type[index];
 				if(gvar->type->ty == INT)node->memory = 4;
+				else if(gvar->type->ty == CHAR)node->memory = 1;
 				else node->memory = 8;
 			}
 			globals = gvar;
 			if(consume("=")){
-				if(gvar->type->ty != ARRAY){
+				if(gvar->type->ty == INT){
 					node->kind = ND_GINT;
 					node->val = expect_number();
-				}
-				else {// TODO: 配列の初期化
+				}else if(gvar->type->ty == CHAR){
+					node->kind = ND_GCHAR;
+					node->val = expect_number();
+				}else {// TODO: 配列の初期化
 				}
 			}
 			code[index][0] = node;
@@ -385,9 +403,8 @@ Node *assign(){
 
 Node *expr(){
 	if(consume_tk(TK_INT)){
-		consume_tk(TK_INT);
                 Node *node = calloc(1,sizeof(Node));
-		node = declare();
+		node = declare(TK_INT);
 		LVar *lvar = calloc(1,sizeof(LVar));
         	lvar->next = locals;
 		lvar->name = node->str;
@@ -397,16 +414,30 @@ Node *expr(){
 		lvar->type = node->type;
         	locals = lvar;
 		return node;
+	} else if(consume_tk(TK_CHAR)){
+                Node *node = calloc(1,sizeof(Node));
+                node = declare(TK_CHAR);
+                LVar *lvar = calloc(1,sizeof(LVar));
+                lvar->next = locals;
+                lvar->name = node->str;
+                lvar->len = strlen(lvar->name);
+                lvar->offset = node->offset;
+                lvar->type = calloc(1,sizeof(Type));
+                lvar->type = node->type;
+                locals = lvar;
+                return node;
 	} else	return assign();
 }
 
-Node *declare() {
+Node *declare(TokenKind kind) {
 	Node *node = calloc(1,sizeof(Node));
         init_node(&node);
 	LVar *lvar = calloc(1,sizeof(LVar));
 	if (consume(DEREF)){
 		node->kind = ND_LDECLARE;
-		node->lhs = declare();
+		if(kind == TK_INT)node->lhs = declare(TK_INT);
+		else if(kind == TK_CHAR)node->lhs = declare(TK_CHAR);
+		else error("その型には対応していません");
 		lvar->type = calloc(1,sizeof(Type));
 		lvar->type->ty = PTR;
 		lvar->type->ptr_to = calloc(1,sizeof(Type));
@@ -459,16 +490,19 @@ Node *declare() {
 			}
                         node->offset = at_vector(node->v,size-1)->offset;
                         node->kind = ND_BLOCK;
-			// どのような型に対する配列か。TODO: int 型、およびそれへのポインタ型に限定
 			node->type->ptr_to = calloc(1,sizeof(Type));
-			node->type->ptr_to = type_list[0];
+			if(kind == TK_INT)node->type->ptr_to = int_list[0];
+			else if(kind == TK_CHAR)node->type->ptr_to = char_list[0];
+			else error("その型には対応していません");
 			consume("]");
 			return node;
 		} else {	
 			lvar->next = locals;
 			lvar->offset = locals->offset + 8;
 			lvar->type = calloc(1,sizeof(Type));
-			lvar->type = type_list[0];
+			if(kind == TK_INT)lvar->type = int_list[0];
+			else if(kind == TK_CHAR)lvar->type = char_list[0];
+			else error("その型には対応していません");
 			node->type = calloc(1,sizeof(Type));
 			node->type = lvar->type;
 			node->offset = lvar->offset;
@@ -480,6 +514,8 @@ Node *declare() {
 		error("変数がありません");
 	}
 }
+
+
 
 Node *equality(){
         Node *node = calloc(1,sizeof(Node));
@@ -526,6 +562,7 @@ Node *add(){
 				buf = mul();
 				int type_size = 8;
 				if(node->type->ptr_to->ty == INT)type_size = 4;
+				else if(node->type->ptr_to->ty == CHAR)type_size = 1;
 				buf = new_node(ND_MUL, buf, new_node_num(type_size));
                         	node = new_node(ND_ADD, node, buf);
 			} else if(node->type->ty == ARRAY) {
@@ -541,6 +578,7 @@ Node *add(){
                                 buf = mul();
 				int type_size = 8;
                                 if(node->type->ptr_to->ty == INT)type_size = 4;
+				else if(node->type->ptr_to->ty == CHAR)type_size = 1;
                                 buf = new_node(ND_MUL, buf, new_node_num(type_size));
                                 node = new_node(ND_SUB, node, buf);
 			}
@@ -747,6 +785,11 @@ void tokenize() {
 			cur = new_token(TK_INT, cur, user_input, 3);
 			continue;
 		}
+
+		if (strlen(user_input) >= 5 && strncmp(user_input, "char", 4) == 0 && !is_alnum(user_input[4])) {
+                        cur = new_token(TK_CHAR, cur, user_input, 4);
+                        continue;
+                }
 
 		if ('a' <= user_input[0] && user_input[0] <= 'z') {
 			cur = new_token(TK_IDENT, cur, user_input, 0);

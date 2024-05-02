@@ -14,7 +14,7 @@
 typedef struct Type Type;
 
 struct Type {
-	enum { INT, PTR, ARRAY } ty;
+	enum { INT, PTR, ARRAY, CHAR } ty;
 	struct Type *ptr_to;
 	size_t array_size;
 };
@@ -58,6 +58,7 @@ typedef enum {
 	ND_GDECLARE,	// グローバル変数の宣言
 	ND_GVAR,	// グローバル変数
 	ND_GINT,	// グローバル変数の宣言 + intで初期化
+	ND_GCHAR,	// グローバル変数の宣言 + charで初期化
 } NodeKind;
 
 
@@ -93,6 +94,7 @@ typedef enum {
 	TK_ELSE,     // else
 	TK_INT,	     // int
 	TK_SIZEOF,   // sizeof
+	TK_CHAR,     // char
 } TokenKind;
 
 typedef struct Token Token;
@@ -189,7 +191,9 @@ extern Type *common_type[10];
 
 extern Vector *vec[10];
 
-extern Type *type_list[10];
+extern Type *int_list[10];
+
+extern Type *char_list[10];
 
 extern ID common_id[10];
 
@@ -210,7 +214,9 @@ void gen(Node *node);
 
 void gen_lval(Node *node);
 
-void gen_type(int index);
+void gen_int(int index);
+
+void gen_char(int index);
 
 void calc_type_depth(Type *type, int *cnt);
 
