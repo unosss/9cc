@@ -1,2 +1,6 @@
-int main(){ char *x; x="Hello World!"; hello(x); return 0;}
-
+int main(){
+	char *x;
+	x="Hello World!";
+	hello(x);
+	return 0;
+}
