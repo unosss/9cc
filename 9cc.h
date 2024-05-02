@@ -187,6 +187,8 @@ extern char *ADDR;
 extern char *DEREF;
 extern char *DQ;
 
+extern char *filename;
+
 extern char *user_input;
 
 extern char *user_input_orig;

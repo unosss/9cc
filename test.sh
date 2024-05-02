@@ -26,9 +26,9 @@ func() {
 	actual="$?"
 
         if [ "$actual" = "$expected" ]; then
-                echo "($input) => $actual"
+                echo "compile ($input) => output: $actual"
         else
-                echo "($input) => $expected expected, but got $actual"
+                echo "compile ($input) => $expected expected, but got $actual"
                 exit 1
         fi
 }
@@ -43,5 +43,5 @@ func() {
 #assert 5 "int main(){int a[3]; a[0]=1; a[1]=5; a[2]=3; return a[1];}"
 #assert 8 "int x=8; int main(){ return x; }"
 #assert 3 "int main(){ char x[3]; x[0]=-1; x[1]=2; int y; y=4; return x[0]+y;}"
-func 0 "int main(){ char *x; x=\"Hello World!\"; hello(x); return 0;}"
+func 0 "test.txt"
 echo "done"
