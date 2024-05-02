@@ -135,9 +135,10 @@ struct GVar {
 };
 
 // 関数と変数の識別子
-typedef struct ID {
-	enum { FUNC, VAR } id;
-};
+typedef enum {
+	FUNC,
+	VAR,
+}ID;
 
 extern LVar *locals;
 
@@ -181,7 +182,7 @@ extern char *reg[6];
 
 extern char *common_name[10];
 
-extern char *common_type[10];
+extern Type *common_type[10];
 
 extern Vector *vec[10];
 
@@ -223,6 +224,10 @@ void tokenize();
 void error(char *fmt, ...);
 
 LVar *find_lvar(Token *tok);
+
+FVar *find_fvar(Token *tok);
+
+GVar *find_gvar(Token *tok);
 
 int is_alnum(char c);
 

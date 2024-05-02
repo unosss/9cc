@@ -603,13 +603,13 @@ Node *primary(){
                                 buf2->type = calloc(1,sizeof(Type));
                                 buf2->type = lvar->type;
 				buf1 = new_node_num(index);
-608                         	int type_size = 8;
-609                         	buf1 = new_node(ND_MUL, buf1, new_node_num(type_size));
-610                         	buf2 = new_node(ND_ADD, buf2, buf1);
-611                         	node->kind = ND_DEREF;
-612                         	node->lhs = buf2;
-613                         	node->type = calloc(1,sizeof(Type));
-614                         	node->type = node->lhs->type->ptr_to;
+                         	int type_size = 8;
+                         	buf1 = new_node(ND_MUL, buf1, new_node_num(type_size));
+                         	buf2 = new_node(ND_ADD, buf2, buf1);
+                         	node->kind = ND_DEREF;
+                         	node->lhs = buf2;
+                         	node->type = calloc(1,sizeof(Type));
+                         	node->type = node->lhs->type->ptr_to;
 			} else if (gvar) {
 				// TODO: グローバル変数の処理
                         } else {
