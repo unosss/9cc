@@ -331,7 +331,7 @@ Node *declare() {
 		lvar->offset = locals->offset + 8;
 		node->offset = lvar->offset;
 		locals = lvar;
-		node->kind = ND_INT;
+		node->kind = ND_LVAR;
 		return node;
 	} else {
 		error("変数がありません");
@@ -430,7 +430,7 @@ Node *primary(){
 				error_at(token->str, "')'ではないトークンです");
 			}
 		} else {
-			node->kind = ND_INT;
+			node->kind = ND_LVAR;
 
 			LVar *lvar = find_lvar(tok);
 			if (lvar) {

@@ -19,7 +19,7 @@ void gen(Node *node){
 	case ND_NUM:
 		printf("	push %d\n", node->val);
 		return;
-	case ND_INT:
+	case ND_LVAR:
 		gen_lval(node);
 		printf("	pop rax\n");
 		printf("	mov rax, [rax]\n");
@@ -37,7 +37,7 @@ void gen(Node *node){
 		return;
 	case ND_DECLARE:
 		gen_lval(node);
-		if(node->lhs->kind != ND_INT)gen(node->lhs);
+		if(node->lhs->kind != ND_LVAR)gen(node->lhs);
 		else gen_lval(node->lhs);
 
 		printf("        pop rdi\n");

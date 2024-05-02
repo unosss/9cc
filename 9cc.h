@@ -53,7 +53,6 @@ typedef enum {
 	ND_FUNC,	// 関数の呼び出し
 	ND_DEREF,	// ポインタ
 	ND_ADDR,	// 参照
-	ND_INT,		// int
 	ND_DECLARE,	// 変数の宣言
 } NodeKind;
 
