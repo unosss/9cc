@@ -500,6 +500,8 @@ Node *primary(){
 				error_at(token->str, "')'ではないトークンです");
 			}
 			node->type = calloc(1,sizeof(Type));
+
+			// TODO: 関数の返り値を int に固定している
 			node->type->ty = INT;
 		} else {
 			node->kind = ND_LVAR;
