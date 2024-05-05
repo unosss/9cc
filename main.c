@@ -112,7 +112,7 @@ int main(int argc, char **argv) {
                 	// 変数２６個分の領域を確保する
                 	printf("        push rbp\n");
                 	printf("        mov rbp, rsp\n");
-                	printf("        sub rsp, 208\n");
+                	printf("        sub rsp, 800\n");
 			for(int j = 0;j < vec[i]->used; j++){
                         	gen_lval(at_vector(vec[i],j));
                         	printf("        pop rax\n");

@@ -41,6 +41,7 @@ GVar *globals;
 LC *lcs;
 
 
+
 // エラーを報告するための関数
 // printfと同じ引数を取る
 void error(char *fmt, ...) {
@@ -681,19 +682,19 @@ Node *primary(){
 			node->kind = ND_FUNC;
 			node->str = calloc(1,sizeof(char));
 			strncpy(node->str, tok->str, tok->len);
-			for (;;) {
+			while(!consume(RB)) {
 				Node *buf = unary();
 				insert_vector(node->v, buf);
-				if(!consume(COM))break;
-			}
-			if (!consume(RB)){
-				error_at(token->str, "')'ではないトークンです");
+				if(consume(RB))break;
+				consume(COM);
 			}
 			FVar *fvar = find_fvar(tok);
                         if (fvar) {
                                 node->type = calloc(1,sizeof(Type));
                                 node->type = fvar->type;
                         } else {
+				node->type = calloc(1,sizeof(Type));
+				node->type->ty = INT;
 				// TODO: 外部関数を呼び出す場合、以下のエラー処理をコメントアウトする必要あり
                                 //error("関数 %s が定義されていません", tok->str);
                         }

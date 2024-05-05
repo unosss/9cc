@@ -21,7 +21,7 @@ func() {
 	input="$2"
 	
 	./9cc "$input" > tmp_function.s
-	cc -o tmp_function tmp_function.s hello.o
+	cc CFLAGS=-std=c11 -static -o tmp_function tmp_function.s hello.o
 	./tmp_function
 	actual="$?"
 
@@ -31,6 +31,26 @@ func() {
                 echo "compile ($input) => $expected expected, but got $actual"
                 exit 1
         fi
+}
+
+check1() {
+        input="$1"
+
+        ./9cc "$input" > check.s
+	cc -o check check.s act.o expc.o
+}
+
+check2() {
+	./check
+	
+       	result="$?"
+	if [ "$result" == "0" ]; then
+		echo "ok"
+	else
+		echo "ng"
+		exit 1
+
+	fi
 }
 
 #assert 6 "int main(){ int x; x=3; int y; y=3; return x+y;}"
@@ -43,5 +63,6 @@ func() {
 #assert 5 "int main(){int a[3]; a[0]=1; a[1]=5; a[2]=3; return a[1];}"
 #assert 8 "int x=8; int main(){ return x; }"
 #assert 3 "int main(){ char x[3]; x[0]=-1; x[1]=2; int y; y=4; return x[0]+y;}"
-func 0 "test.txt"
+check1 "check.txt"
+check2
 echo "done"

@@ -8,6 +8,8 @@
 
 int id = 0;
 
+bool stack_x16 = true;
+
 void gen_lval(Node *node){
 	printf("	mov rax, rbp\n");
 	printf("	sub rax, %d\n", node->offset);
@@ -151,13 +153,16 @@ void gen(Node *node){
 		}
 		return;
 	case ND_FUNC:
+		if(!stack_x16)printf("	push 0\n");
 		for (int i = 0; i < node->v->used; i++) {
 			gen(at_vector(node->v, i));
 			printf("	pop rax\n");
 			printf("	mov %s, rax\n", reg[i]);
 		}
 		printf("	call %s\n", node->str);
+		if(!stack_x16)printf("  pop rcx\n");
 		printf("	push rax\n");
+		stack_x16 = !(stack_x16);
 		return;
 	case ND_ADDR:
                 gen_lval(node->lhs);

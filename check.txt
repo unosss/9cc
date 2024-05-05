@@ -1,0 +1,9 @@
+int main(){
+	// act はコンパイル対象のソースコード code.txt の実行結果を返す
+	
+	// expc は想定結果を result.txt から読み込んで返す
+	
+	if(act() == expc())return 0;
+	else return 1;
+	return 0;
+}
