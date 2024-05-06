@@ -33,14 +33,9 @@ func() {
         fi
 }
 
-make_elf() {
-	cc -c testdir/act.c testdir/expc.c
-        ./9cc testdir/check.txt > testdir/check.s
-	cc -static -o testdir/check testdir/check.s testdir/act.o testdir/expc.o
-}
 
 check() {
-	./testdir/check
+	./check
 
         result="$?"
         if [ "$result" == "0" ]; then
@@ -64,8 +59,6 @@ check() {
 #assert 5 "int main(){int a[3]; a[0]=1; a[1]=5; a[2]=3; return a[1];}"
 #assert 8 "int x=8; int main(){ return x; }"
 #assert 3 "int main(){ char x[3]; x[0]=-1; x[1]=2; int y; y=4; return x[0]+y;}"
-
-make_elf
 
 check
 
