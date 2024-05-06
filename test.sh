@@ -33,26 +33,27 @@ func() {
         fi
 }
 
-check1() {
-        input="$1"
-
-        ./9cc "$input" > check.s
-	cc -o check check.s act.o expc.o
+make_elf() {
+	cc -c testdir/act.c testdir/expc.c
+        ./9cc testdir/check.txt > testdir/check.s
+	cc -static -o testdir/check testdir/check.s testdir/act.o testdir/expc.o
 }
 
-check2() {
-	./check
-	
-       	result="$?"
-	if [ "$result" == "0" ]; then
-		echo "ok"
-	else
-		echo "ng"
-		exit 1
+check() {
+	./testdir/check
 
-	fi
+        result="$?"
+        if [ "$result" == "0" ]; then
+                echo "ok"
+        else
+                echo "ng"
+                exit 1
+
+        fi
 }
 
+
+# シェルでテストしていた時のテストケース
 #assert 6 "int main(){ int x; x=3; int y; y=3; return x+y;}"
 #assert 3 "int f(int x, int y){ return x+y; } int main(){ return f(1,2); }"
 #assert 10 "int f(int x){ if(x==0)return 0; int y; y=x-1; return x + f(y); } int main(){ return f(4);}"
@@ -63,6 +64,9 @@ check2() {
 #assert 5 "int main(){int a[3]; a[0]=1; a[1]=5; a[2]=3; return a[1];}"
 #assert 8 "int x=8; int main(){ return x; }"
 #assert 3 "int main(){ char x[3]; x[0]=-1; x[1]=2; int y; y=4; return x[0]+y;}"
-check1 "check.txt"
-check2
+
+make_elf
+
+check
+
 echo "done"

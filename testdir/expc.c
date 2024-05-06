@@ -7,8 +7,8 @@
 int expc(){
 	char type[] = "r";
 	char result[1024];
-	char command[] = "cat result.txt";
-	FILE *fp = popen("cat result.txt", "r");
+	char command[] = "cat testdir/result.txt";
+	FILE *fp = popen(command, type);
         if(fp == NULL){
                 perror("popen failed.");
                 pclose(fp);
