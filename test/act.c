@@ -3,7 +3,7 @@
 #include <stdlib.h>
 
 int act(){
-	char command1[] = "./9cc testdir/input.txt > input.s";
+	char command1[] = "./9cc test/input.txt > input.s";
 	char command2[] = "cc -o input input.s";
 	char command[] = "./input ; echo $?";
 	char type[] = "r";

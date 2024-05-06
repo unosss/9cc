@@ -2,7 +2,7 @@ CFLAGS=-std=c11 -g -static
 SRCSDIR=src/
 SRCS=$(wildcard ${SRCSDIR}*.c)
 OBJS=$(SRCS:.c=.o)
-TESTDIR=testdir/
+TESTDIR=test/
 TESTSRCS=$(wildcard ${TESTDIR}*.c)
 
 9cc: $(OBJS)
