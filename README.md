@@ -19,6 +19,8 @@ rootで以下のコマンドを実行。
 
 - `make`
   - コンパイラの実行ファイルを作成。
+- `make prepare`
+  - テストの実行ファイルを作成。
 - `make test`
   - テストを実行。
 - `make clean`
