@@ -3,7 +3,7 @@ int main(){
 	
 	// expc は想定結果を result.txt から読み込んで返す
 	
-	if(act() == expc())return 0;
-	else return 1;
+	if(act() == expc()) ok();
+	else ng();
 	return 0;
 }

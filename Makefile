@@ -15,7 +15,7 @@ prepare:
 	$(CC) -c $(TESTSRCS)
 
 test: 9cc prepare
-	$(CC) -o check tmp.s act.o expc.o
+	$(CC) -o check tmp.s act.o expc.o print.o
 	./check
 
 clean:
