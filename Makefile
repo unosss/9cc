@@ -10,12 +10,12 @@ TESTSRCS=$(wildcard ${TESTDIR}*.c)
 
 $(OBJS): ${SRCSDIR}9cc.h
 
-prepare:
+prepare: 9cc
 	./9cc ${TESTDIR}check.txt > tmp.s
 	$(CC) -c $(TESTSRCS)
-
-test: 9cc prepare
 	$(CC) -o check tmp.s act.o expc.o print.o
+
+test:
 	./check
 
 clean:
